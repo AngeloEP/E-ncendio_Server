@@ -13,10 +13,13 @@ app.use(express.json({ extended: true }))
 // Puerto de la app
 const PORT = process.env.PORT || 4000
 
-// Importar rutas
+// Importar rutas para los usuarios
 app.use('/api/usuarios', require('./routes/usuarios'))
 
-// Importar rutas
+// Importar rutas para las imágenes
+app.use('/api/images', require('./routes/images'))
+
+// Importar rutas para autentificaciones
 app.use('/api/auth', require('./routes/auth'))
 
 // Arrancar el server
