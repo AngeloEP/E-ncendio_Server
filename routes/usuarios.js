@@ -2,6 +2,7 @@
 const express = require('express')
 const router = express.Router()
 const usuarioController = require('../controllers/usuarioController')
+const profileController = require('../controllers/profileController')
 const { check } = require('express-validator')
 
 // Crea un usuario
@@ -16,7 +17,8 @@ router.post('/',
         check('password', 'El password debe ser mínimo de 6 caracteres').isLength({ min: 6 }),
         check('isExpert', 'Debe ser de tipo booleano').isBoolean(),
     ],
-    usuarioController.crearUsuario
+    usuarioController.crearUsuario,
+    profileController.crearPerfil
 )
 
 module.exports = router;

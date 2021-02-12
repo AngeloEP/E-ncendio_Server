@@ -1,6 +1,5 @@
 const Image = require('../models/Image')
-const League = require('../models/League')
-const bcryptjs = require('bcryptjs')
+const Level = require('../models/Level')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 
@@ -23,11 +22,11 @@ exports.guardarImagen = async (req, res) => {
             return res.status(400).json({ msg: 'No ha adjuntado la imagen' })
         }
 
-        // Encontrar liga a asociar
-        liga = await League.findOne({ level: 1 })
+        // Encontrar nivel a asociar
+        nivel = await Level.findOne({ level: 1 })
 
-        // Guardar la Liga a la que pertenece la imagen
-        image.league_id = liga._id;
+        // Guardar al Nivel al que pertenece la imagen
+        image.level_id = nivel._id;
 
         const { filename } = req.file
         image.setImagegUrl(filename)
@@ -39,5 +38,15 @@ exports.guardarImagen = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send({ msg: 'Hubo un error al tratar de guardar la imagen'})
+    }
+}
+
+exports.obtenerImagenes = async (req, res) => {
+    try {
+        const imagenes = await Image.find({})
+        res.json({ imagenes })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ msg: 'Hubo un error al tratar de obtener las imágenes' })
     }
 }

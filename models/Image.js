@@ -7,9 +7,9 @@ const ImagesSchema = mongoose.Schema({
         unique: true,
         trim: true
     },
-    league_id: {
+    level_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'League'
+        ref: 'Level'
     },
     imageUrl: {
         type: String,

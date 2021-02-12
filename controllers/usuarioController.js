@@ -3,7 +3,7 @@ const bcryptjs = require('bcryptjs')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 
-exports.crearUsuario = async (req, res) => {
+exports.crearUsuario = async (req, res, next) => {
 
     // Revisar si hay errores
     const errores = validationResult(req)
@@ -47,8 +47,9 @@ exports.crearUsuario = async (req, res) => {
 
             // Mensaje de confirmación
             res.json({ token: token })
-        })
-
+        });
+        next();
+        
 
     } catch (error) {
         console.log(error)

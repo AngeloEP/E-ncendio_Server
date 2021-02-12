@@ -1,10 +1,11 @@
 const mongoose = require('mongoose')
 
 const LeagueSchema = mongoose.Schema({
-    level: {
-        type: Number,
+    league: {
+        type: String,
         required: true,
-        trim: true
+        trim: true,
+        unique: true
     }
 })
 

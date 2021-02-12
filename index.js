@@ -27,8 +27,14 @@ app.use('/api/images', require('./routes/images'))
 // Importar rutas para autentificaciones
 app.use('/api/auth', require('./routes/auth'))
 
+// Importar rutas para los niveles
+app.use('/api/levels', require('./routes/levels'))
+
 // Importar rutas para las ligas
 app.use('/api/leagues', require('./routes/leagues'))
+
+// Importar rutas para las categorías
+app.use('/api/categories', require('./routes/categories'))
 
 // Arrancar el server
 app.listen(PORT, () => {

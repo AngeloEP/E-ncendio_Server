@@ -14,9 +14,15 @@ router.post('/',
     [
         check('filename', 'El nombre de la imagen es obligatorio').not().isEmpty(),
         check('difficulty', 'Debes ingresar una dificultad asociada a la imagen').not().isEmpty(),
-        check('points', 'Debes ingresar una cantidad de puntos asociados a la imagen').not().isEmpty(),
+        check('points', 'Debes ingresar una cantidad de puntos asociados a la imagen').isNumeric(),
     ],
     imageController.guardarImagen
+)
+
+// Obtiene las imágenes (agregar de cierta liga)
+router.get('/',
+    auth,
+    imageController.obtenerImagenes
 )
 
 module.exports = router;
