@@ -1,4 +1,6 @@
 const Usuario = require('../models/Usuario')
+const Profile = require('../models/Profile')
+const Level = require('../models/Level')
 const bcryptjs = require('bcryptjs')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -54,5 +56,30 @@ exports.crearUsuario = async (req, res, next) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('Hubo un errror al tratar de crear usuario')
+    }
+}
+
+exports.obtenerPerfilUsuario = async (req, res) => {
+    try {
+        const perfil = await Profile.findOne({ user_id: req.usuario.id })
+                                    .populate("league_id")
+                                    .populate("level_image_id")
+                                    .populate("level_word_id")
+                                    .populate("level_four_image_id");
+        res.json(perfil)
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('Hubo un errror al tratar de obtener el perfil del usuario')
+    }
+}
+
+exports.obtenerNivelImagenesUsuario = async (req, res) => {
+    try {
+        const perfil = await Profile.findOne({ user_id: req.usuario.id });
+        const nivelImagenes = await Level.findOne({ _id : perfil.level_image_id });
+        res.json(nivelImagenes)
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('Hubo un errror al tratar de obtener el nivel de imágenes del usuario')
     }
 }

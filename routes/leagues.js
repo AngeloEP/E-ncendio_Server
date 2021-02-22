@@ -11,6 +11,7 @@ router.post('/',
     auth,
     [
         check('league', 'El nombre de la liga debe ser obligatorio').not().isEmpty(),
+        check('pointsNextLeague', 'El nombre de la liga debe ser obligatorio').isNumeric(),
     ],
     leagueController.crearLiga
 )

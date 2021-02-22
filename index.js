@@ -36,6 +36,12 @@ app.use('/api/leagues', require('./routes/leagues'))
 // Importar rutas para las categorías
 app.use('/api/categories', require('./routes/categories'))
 
+// Importar rutas para las asociaciones de imágenes
+app.use('/api/tag-images', require('./routes/tagImageAssociations'))
+
+// Importar rutas para perfiles de usuario
+app.use('/api/profiles', require('./routes/profiles'))
+
 // Arrancar el server
 app.listen(PORT, () => {
     console.log(`Es servidor esta funcionando en el puerto ${PORT}`)

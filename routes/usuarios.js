@@ -4,6 +4,7 @@ const router = express.Router()
 const usuarioController = require('../controllers/usuarioController')
 const profileController = require('../controllers/profileController')
 const { check } = require('express-validator')
+const auth = require('../middleware/auth')
 
 // Crea un usuario
 // api/usuarios
@@ -19,6 +20,18 @@ router.post('/',
     ],
     usuarioController.crearUsuario,
     profileController.crearPerfil
+)
+
+// Obtener el perfil del usuario
+router.get('/profile',
+    auth,
+    usuarioController.obtenerPerfilUsuario
+)
+
+// Obtener el nivel de etiquetado de imágenes del usuario
+router.get('/level-images',
+    auth,
+    usuarioController.obtenerNivelImagenesUsuario
 )
 
 module.exports = router;

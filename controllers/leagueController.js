@@ -9,12 +9,16 @@ exports.crearLiga = async (req, res) => {
         return res.status(400).json({ errores: errores.array() })
     }
 
-    const { league } = req.body
+    const { league, pointsNextLeague } = req.body
     try {
         let liga = await League.findOne({ league })
 
         if (liga) {
             return res.status(400).json({ msg: 'La liga ya existe' })
+        }
+        liga = await League.findOne({ pointsNextLeague })
+        if (liga) {
+            return res.status(400).json({ msg: 'Esta puntuación de Liga ya existe' })
         }
 
         liga = new League(req.body)

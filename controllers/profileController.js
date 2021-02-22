@@ -54,3 +54,59 @@ exports.obtenerTodosLosPerfiles = async (req, res) => {
         res.status(500).json({ msg: 'Hubo un error al tratar de obtener los perfiles' })
     }
 }
+
+exports.actualizarPerfil = async (req, res) => {
+    try {
+
+        const {
+            user_id,
+            level_image_id,
+            level_word_id,
+            level_four_image_id,
+            league_id,
+            score
+        } = req.body;
+        // Comprobar si existe el perfil
+        let perfil = await Profile.findById(req.params.id)
+        
+        if (!perfil) {
+            return res.status(404).json({ msg: "No existe ese Perfil de Usuario" })
+        }
+
+        if ( user_id.toString() !== req.usuario.id ) {
+            return res.status(401).json({ msg: "No Autorizado, no puede editar el Perfil" })
+        }
+
+        const nuevoPerfil = {}
+        nuevoPerfil.score = score
+        if ( typeof league_id === "string" ) {
+            let nuevaLiga = ""
+            switch (league_id) {
+                case "Bronce":
+                    nuevaLiga = "Plata"
+                    break;
+
+                case "Plata":
+                    nuevaLiga = "Oro"
+                    break;
+            
+                default:
+                    nuevaLiga = "Oro"
+                    break;
+            }
+            ligaNueva = await League.findOne({ league: nuevaLiga })
+            nuevoPerfil.league_id = ligaNueva._id
+        }
+
+        // Guardar Perfil
+        perfil = await Profile.findOneAndUpdate({ _id : req.params.id }, nuevoPerfil, { new: true } )
+                                .populate("league_id")
+                                .populate("level_image_id")
+                                .populate("level_word_id")
+                                .populate("level_four_image_id");
+        res.json({ perfil })
+
+    } catch (error) {
+        
+    }
+}

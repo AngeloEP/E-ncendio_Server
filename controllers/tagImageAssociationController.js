@@ -6,21 +6,18 @@ const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 
 exports.crearAsociacionDeImagen = async (req, res) => {
-    // Revisar si hay errores
-    const errores = validationResult(req)
-    if ( !errores.isEmpty() ) {
-        return res.status(400).json({ errores: errores.array() })
-    }
-
+    
     // Extraer información de la asociación
     const {  } = req.body
 
     try {
-        imagenAsociada = new TagImageAssociation(req.body)
+        imagenAsociada = new TagImageAssociation()
+        imagenAsociada.user_id = req.usuario.id
+        imagenAsociada.image_id = req.params.image
+        imagenAsociada.category_id = req.params.category
 
         await imagenAsociada.save()
 
-        console.log("Asociacion de imagen a categoría: ", imagenAsociada)
         res.json(imagenAsociada)
 
     } catch (error) {

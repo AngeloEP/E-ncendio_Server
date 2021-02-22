@@ -7,14 +7,9 @@ const auth = require('../middleware/auth')
 
 
 // Guardar asociación
-// api/tagImageAssociations
-router.post('/',
+// api/tag-images
+router.post('/:image/category/:category',
     auth,
-    [
-        check('user_id', 'La relación a un usuario es obligatorio').not().isEmpty(),
-        check('image_id', 'La relación a una imagen es obligatorio').not().isEmpty(),
-        check('category_id', 'La relación a una categoría es obligatorio').not().isEmpty(),
-    ],
     tagImageAssociationController.crearAsociacionDeImagen
 )
 

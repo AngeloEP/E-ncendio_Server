@@ -10,4 +10,9 @@ router.get('/',
     profileController.obtenerTodosLosPerfiles
 )
 
+router.put('/:id',
+    auth,
+    profileController.actualizarPerfil
+)
+
 module.exports = router;
