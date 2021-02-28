@@ -1,13 +1,13 @@
 const mongoose = require('mongoose')
 
-const TagImageAssociationsSchema = mongoose.Schema({
+const TagWordAssociationsSchema = mongoose.Schema({
     user_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario'
     },
-    image_id: {
+    word_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Image'
+        ref: 'Word'
     },
     category_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -15,4 +15,4 @@ const TagImageAssociationsSchema = mongoose.Schema({
     }
 })
 
-module.exports = mongoose.model('TagImageAssociation', TagImageAssociationsSchema);
+module.exports = mongoose.model('TagWordAssociation', TagWordAssociationsSchema);

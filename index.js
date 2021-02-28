@@ -36,11 +36,18 @@ app.use('/api/leagues', require('./routes/leagues'))
 // Importar rutas para las categorías
 app.use('/api/categories', require('./routes/categories'))
 
+// Importar rutas para perfiles de usuario
+app.use('/api/profiles', require('./routes/profiles'))
+
+// Importar rutas para agregar las palabras a etiquetar
+app.use('/api/words', require('./routes/words'))
+
 // Importar rutas para las asociaciones de imágenes
 app.use('/api/tag-images', require('./routes/tagImageAssociations'))
 
-// Importar rutas para perfiles de usuario
-app.use('/api/profiles', require('./routes/profiles'))
+// Importar rutas para las asociaciones de Palabras
+app.use('/api/tag-words', require('./routes/tagWordAssociations'))
+
 
 // Arrancar el server
 app.listen(PORT, () => {
