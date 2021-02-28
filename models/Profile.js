@@ -17,14 +17,30 @@ const ProfileSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Level'
     },
-    league_id: {
+    league_image_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'League'
     },
-    score: {
+    league_word_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'League'
+    },
+    league_four_image_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'League'
+    },
+    score_image: {
         type: Number,
         required: true
-    }
+    },
+    score_word: {
+        type: Number,
+        required: true
+    },
+    score_four_image: {
+        type: Number,
+        required: true
+    },
 })
 
 module.exports = mongoose.model('Profile', ProfileSchema);

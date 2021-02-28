@@ -29,10 +29,14 @@ exports.crearPerfil = async (req, res) => {
         
         // Asociar a la liga más baja
         liga = await League.findOne({ league: 'Bronce' })
-        perfil.league_id = liga['_id']
+        perfil.league_image_id = liga['_id']
+        perfil.league_word_id = liga['_id']
+        perfil.league_four_image_id = liga['_id']
 
-        // Iniciar el Puntaje del perfil en 0
-        perfil.score = 0
+        // Iniciar el Puntaje de los juegos del perfil en 0
+        perfil.score_image = 0
+        perfil.score_word = 0
+        perfil.score_four_image = 0
 
         await perfil.save()
 
@@ -63,8 +67,11 @@ exports.actualizarPerfil = async (req, res) => {
             level_image_id,
             level_word_id,
             level_four_image_id,
-            league_id,
-            score
+            league_image_id,
+            league_word_id,
+            score_image,
+            score_word,
+            score_four_image
         } = req.body;
         // Comprobar si existe el perfil
         let perfil = await Profile.findById(req.params.id)
@@ -78,10 +85,12 @@ exports.actualizarPerfil = async (req, res) => {
         }
 
         const nuevoPerfil = {}
-        nuevoPerfil.score = score
-        if ( typeof league_id === "string" ) {
+        nuevoPerfil.score_image = score_image
+        nuevoPerfil.score_word = score_word
+        nuevoPerfil.score_four_image = score_four_image
+        if ( typeof league_image_id === "string" ) {
             let nuevaLiga = ""
-            switch (league_id) {
+            switch (league_image_id) {
                 case "Bronce":
                     nuevaLiga = "Plata"
                     break;
@@ -95,12 +104,32 @@ exports.actualizarPerfil = async (req, res) => {
                     break;
             }
             ligaNueva = await League.findOne({ league: nuevaLiga })
-            nuevoPerfil.league_id = ligaNueva._id
+            nuevoPerfil.league_image_id = ligaNueva._id
+        }
+        else if ( typeof league_word_id === "string" ) {
+            let nuevaLiga = ""
+            switch (league_word_id) {
+                case "Bronce":
+                    nuevaLiga = "Plata"
+                    break;
+
+                case "Plata":
+                    nuevaLiga = "Oro"
+                    break;
+            
+                default:
+                    nuevaLiga = "Oro"
+                    break;
+            }
+            ligaNueva = await League.findOne({ league: nuevaLiga })
+            nuevoPerfil.league_word_id = ligaNueva._id
         }
 
         // Guardar Perfil
         perfil = await Profile.findOneAndUpdate({ _id : req.params.id }, nuevoPerfil, { new: true } )
-                                .populate("league_id")
+                                .populate("league_image_id")
+                                .populate("league_word_id")
+                                .populate("league_four_image_id")
                                 .populate("level_image_id")
                                 .populate("level_word_id")
                                 .populate("level_four_image_id");
