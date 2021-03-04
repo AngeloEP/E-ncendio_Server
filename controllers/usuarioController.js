@@ -62,12 +62,11 @@ exports.crearUsuario = async (req, res, next) => {
 exports.obtenerPerfilUsuario = async (req, res) => {
     try {
         const perfil = await Profile.findOne({ user_id: req.usuario.id })
-                                    .populate("league_image_id")
-                                    .populate("league_word_id")
-                                    .populate("league_four_image_id")
+                                    .populate("league_id")
                                     .populate("level_image_id")
                                     .populate("level_word_id")
                                     .populate("level_four_image_id");
+        console.log(perfil)
         res.json(perfil)
     } catch (error) {
         console.log(error)

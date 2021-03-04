@@ -1,4 +1,5 @@
 const League = require('../models/League')
+const Profile = require('../models/Profile')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 
@@ -31,4 +32,30 @@ exports.crearLiga = async (req, res) => {
         res.status(400).send({ msg: 'Hubo un error al tratar de guardar la liga'})
     }
 
+}
+
+exports.sumarLigas = async (req, res) => {
+    try {
+        let ligas = await Profile.aggregate([
+            {
+                $lookup: {
+                    "from": "leagues",
+                    "localField": "league_id",
+                    "foreignField": "_id",
+                    "as": "league_id"
+                }
+            },
+            { "$unwind": "$league_id" },
+            {
+                $group: {
+                    _id: "$league_id.league",
+                    Total: {$sum: 1}
+                }
+            }
+        ])
+        res.json(ligas)
+    } catch (error) {
+        console.log(error)
+        res.status(400).send({ msg: 'Hubo un error al tratar de agrupar y sumar las ligas'})
+    }
 }

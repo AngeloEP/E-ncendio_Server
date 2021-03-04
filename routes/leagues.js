@@ -16,4 +16,10 @@ router.post('/',
     leagueController.crearLiga
 )
 
+// Contar los usuarios en las diferentes ligas
+router.get('/count',
+    auth,
+    leagueController.sumarLigas
+)
+
 module.exports = router;
