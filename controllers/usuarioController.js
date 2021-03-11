@@ -66,7 +66,6 @@ exports.obtenerPerfilUsuario = async (req, res) => {
                                     .populate("level_image_id")
                                     .populate("level_word_id")
                                     .populate("level_four_image_id");
-        console.log(perfil)
         res.json(perfil)
     } catch (error) {
         console.log(error)
@@ -82,5 +81,24 @@ exports.obtenerNivelImagenesUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('Hubo un errror al tratar de obtener el nivel de imágenes del usuario')
+    }
+}
+
+exports.obtenerRangoDeEdades = async (req, res) => {
+    try {
+        let usuarios = {};
+        usuarios.range = [ "9-13", "14-20", "21-25", "26-40"]
+        usuarios.total = []
+        usuarios.total.push(
+            await Usuario.countDocuments( { age: {$gte: 9, $lte: 13} } ),
+            await Usuario.countDocuments( { age: {$gte: 14, $lte: 20} } ),
+            await Usuario.countDocuments( { age: {$gte: 21, $lte: 25} } ),
+            await Usuario.countDocuments( { age: {$gte: 26, $lte: 40} } )
+        );
+
+        res.json(usuarios)
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('Hubo un errror al tratar de obtener el rango de edades de los usuarios')
     }
 }

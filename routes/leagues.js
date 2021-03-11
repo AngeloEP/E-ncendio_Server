@@ -16,8 +16,8 @@ router.post('/',
     leagueController.crearLiga
 )
 
-// Contar los usuarios en las diferentes ligas
-router.get('/count',
+// Distribución  de los usuarios en las diferentes ligas
+router.get('/distribution-leagues',
     auth,
     leagueController.sumarLigas
 )

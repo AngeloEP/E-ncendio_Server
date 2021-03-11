@@ -34,4 +34,10 @@ router.get('/level-images',
     usuarioController.obtenerNivelImagenesUsuario
 )
 
+// Obtener el rango de edades de los usuarios
+router.get('/rangeAge',
+    auth,
+    usuarioController.obtenerRangoDeEdades
+)
+
 module.exports = router;
