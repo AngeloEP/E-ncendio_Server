@@ -3,3 +3,6 @@ node_modules/
 
 # Storage images
 storage/
+
+# Environment variables
+variables.env
