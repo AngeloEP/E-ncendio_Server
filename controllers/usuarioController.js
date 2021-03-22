@@ -4,6 +4,57 @@ const Level = require('../models/Level')
 const bcryptjs = require('bcryptjs')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
+const path = require('path')
+const multer = require('multer')
+
+const storage = multer.diskStorage({
+    destination: path.join(__dirname, "../storage/profiles_images"),
+    filename: (req, file, cb) => {
+      cb(null, `${file.originalname.split(".")[0]}-${Date.now()}.${file.mimetype.split("/")[1]}`);
+    }
+})
+
+let fileFilter = function (req, file, cb) {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname));
+    if (mimetype && extname) {
+        cb(null, true);
+    } else {
+        cb({
+            success: false,
+            message: 'Tipo de archivo inválido, solo se permiten de tipo: jpeg|jpg|png|gif.'
+        });
+    }
+};
+
+const obj = multer({
+    storage,
+    dest: path.join(__dirname, "../storage/profiles_images"),
+    limits: {
+        fileSize: 1 * 1024 * 1024
+    },
+    fileFilter: fileFilter
+});
+
+const upload = multer(obj).single('image'); // upload.single('file')
+
+exports.cargarImagenUsuario = async (req, res, next) => {
+    upload(req, res, function (error) {
+        if (error) { //instanceof multer.MulterError
+            console.log(error)
+            if (error.code == 'LIMIT_FILE_SIZE') {
+                return res.status(500).json({ msg: 'Tamaño del archivo demasiado grande, el límite es de 1 MB' })
+            }
+            return res.status(500).json({ msg: error.message});
+        } else {
+            if (!req.file) {
+                return res.status(400).json({ msg: 'No ha adjuntado la imagen de su perfil' })
+            }
+            next();
+        }
+    })
+}
 
 exports.crearUsuario = async (req, res, next) => {
 
@@ -26,6 +77,8 @@ exports.crearUsuario = async (req, res, next) => {
 
         // Crea el nuevo usuario
         usuario = new Usuario(req.body)
+        const { filename } = req.file
+        usuario.setImagegUrl(filename)
 
         // Hashear el password
         const salt = await bcryptjs.genSalt(10)
@@ -40,7 +93,6 @@ exports.crearUsuario = async (req, res, next) => {
                 id: usuario.id
             }
         }
-
         // Firmar el JWT
         jwt.sign(payload, process.env.SECRETA, {
             expiresIn: 3600 // 1 hora?
@@ -55,7 +107,7 @@ exports.crearUsuario = async (req, res, next) => {
 
     } catch (error) {
         console.log(error)
-        res.status(400).send('Hubo un errror al tratar de crear usuario')
+        res.status(400).json({ msg: 'Hubo un errror al tratar de crear usuario'})
     }
 }
 

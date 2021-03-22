@@ -14,6 +14,7 @@ app.use(cors())
 // Habilitar express.json
 app.use(express.json({ extended: true }))
 app.use('/public', express.static(`${__dirname}/storage/imgs`))
+app.use('/public/profile_image', express.static(`${__dirname}/storage/profiles_images`))
 
 // Puerto de la app
 const PORT = process.env.PORT || 4000

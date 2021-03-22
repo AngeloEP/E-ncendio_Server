@@ -16,7 +16,6 @@ exports.crearPerfil = async (req, res) => {
     try {
         perfil = new Profile()
         // Encontrar el usuario a asociar
-        console.log(perfil)
         const { email } = req.body
         usuario = await Usuario.findOne({ email: email })
         perfil.user_id = usuario['_id']
@@ -36,7 +35,7 @@ exports.crearPerfil = async (req, res) => {
 
         await perfil.save()
 
-        res.json(perfil)
+        // res.json(perfil)
 
     } catch (error) {
         console.log(error)
@@ -48,6 +47,8 @@ exports.crearPerfil = async (req, res) => {
 exports.obtenerTodosLosPerfiles = async (req, res) => {
     try {
         const perfiles = await Profile.find({})
+                                        .populate("league_id")
+                                        .populate("user_id");
         res.json({ perfiles })
     } catch (error) {
         console.log(error)

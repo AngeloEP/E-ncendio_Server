@@ -6,17 +6,21 @@ const profileController = require('../controllers/profileController')
 const { check } = require('express-validator')
 const auth = require('../middleware/auth')
 
+
+
 // Crea un usuario
 // api/usuarios
 router.post('/',
+    usuarioController.cargarImagenUsuario,
     [
         check('firstname', 'El Nombre es obligatorio').not().isEmpty(),
         check('lastname', 'El Apellido es obligatorio').not().isEmpty(),
         check('gender', 'El Género es obligatorio').not().isEmpty(),
         check('age', 'Su edad es obligatoria y debe ser un número').isNumeric(),
+        check('phone', 'Su teléfono es obligatoro y debe ser de 9 dígitos').isLength( {min:9,max:9} ),
         check('email', 'Agrega un email válido').isEmail(),
         check('password', 'El password debe ser mínimo de 6 caracteres').isLength({ min: 6 }),
-        check('isExpert', 'Debe ser de tipo booleano').isBoolean(),
+        check('isExpert', 'Debes seleccionar si perteneces o no a FireSES').isBoolean(),
     ],
     usuarioController.crearUsuario,
     profileController.crearPerfil
