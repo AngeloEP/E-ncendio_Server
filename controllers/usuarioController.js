@@ -49,7 +49,8 @@ exports.cargarImagenUsuario = async (req, res, next) => {
             return res.status(500).json({ msg: error.message});
         } else {
             if (!req.file) {
-                return res.status(400).json({ msg: 'No ha adjuntado la imagen de su perfil' })
+                console.log("No a seleccionado una imagen....")
+                // return res.status(400).json({ msg: 'No ha adjuntado la imagen de su perfil' })
             }
             next();
         }
@@ -77,8 +78,11 @@ exports.crearUsuario = async (req, res, next) => {
 
         // Crea el nuevo usuario
         usuario = new Usuario(req.body)
-        const { filename } = req.file
-        usuario.setImagegUrl(filename)
+
+        if ( req.file ) {
+            const { filename } = req.file
+            usuario.setImagegUrl(filename)
+        }
 
         // Hashear el password
         const salt = await bcryptjs.genSalt(10)
@@ -152,5 +156,60 @@ exports.obtenerRangoDeEdades = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('Hubo un errror al tratar de obtener el rango de edades de los usuarios')
+    }
+}
+
+exports.modificarUsuario = async (req, res) => {
+
+    // Revisar si hay errores
+    const errores = validationResult(req)
+    if ( !errores.isEmpty() ) {
+        return res.status(400).json({ errores: errores.array() })
+    }
+
+    try {
+        const {
+            firstname,
+            lastname,
+            phone,
+            age,
+            gender,
+        } = req.body;
+        // Comprobar si existe el usuario
+        let usuarioAntiguo = await Usuario.findById(req.params.id)
+
+        if (!usuarioAntiguo) {
+            return res.status(404).json({ msg: "No existe ese Perfil de Usuario" })
+        }
+
+        if ( req.params.id.toString() !== req.usuario.id ) {
+            return res.status(401).json({ msg: "No Autorizado, no puede editar el Perfil de este Usuario" })
+        }
+
+        const usuarioNuevo = {}
+        usuarioNuevo.firstname = firstname
+        usuarioNuevo.lastname = lastname
+        usuarioNuevo.phone = phone
+        usuarioNuevo.age = age
+        usuarioNuevo.gender = gender
+        
+        // Guardar Usuario
+        usuarioAntiguo = await Usuario.findOneAndUpdate(
+                        { _id : req.params.id },
+                        usuarioNuevo,
+                        { new: true }
+                        );
+
+        if ( req.file ) {
+            const { filename } = req.file
+            usuarioAntiguo.setImagegUrl(filename)
+        }
+        await usuarioAntiguo.save()
+
+        res.json({ usuarioAntiguo })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo modificar su perfil de usuario')
     }
 }
