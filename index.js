@@ -1,6 +1,8 @@
 const express = require("express")
 const conectarDB = require('./config/db')
 const cors = require('cors')
+const path = require('path')
+process.env.PWD = process.cwd()
 
 // Crear el Server
 const app = express()
@@ -13,8 +15,9 @@ app.use(cors())
 
 // Habilitar express.json
 app.use(express.json({ extended: true }))
-app.use('/public', express.static(`${__dirname}/storage/imgs`))
-app.use('/public/profile_image', express.static(`${__dirname}/storage/profiles_images`))
+app.use('/public', express.static(`${process.env.PWD}/storage/imgs`))
+// app.use('/public', express.static(path.join(__dirname, './storage/imgs/')))
+app.use('/public/profile_image', express.static(`${process.env.PWD}/storage/profiles_images`))
 
 // Puerto de la app
 const port = process.env.PORT || 4000
