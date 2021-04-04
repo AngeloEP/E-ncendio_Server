@@ -15,7 +15,8 @@ app.use(cors())
 
 // Habilitar express.json
 app.use(express.json({ extended: true }))
-app.use('/public', express.static(`${process.env.PWD}/storage/imgs`))
+// app.use('/public', express.static(`${process.env.PWD}/storage/imgs`))
+app.use('/public', express.static(path.join(process.env.PWD, '/storage/imgs')));
 // app.use('/public', express.static(path.join(__dirname, './storage/imgs/')))
 app.use('/public/profile_image', express.static(`${process.env.PWD}/storage/profiles_images`))
 
