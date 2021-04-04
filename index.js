@@ -17,7 +17,7 @@ app.use('/public', express.static(`${__dirname}/storage/imgs`))
 app.use('/public/profile_image', express.static(`${__dirname}/storage/profiles_images`))
 
 // Puerto de la app
-const PORT = process.env.PORT || 4000
+const port = process.env.port || 4000
 
 // Importar rutas para los usuarios
 app.use('/api/usuarios', require('./routes/usuarios'))
@@ -54,6 +54,6 @@ app.use('/api/contact-form', require('./routes/contactForms'))
 
 
 // Arrancar el server
-app.listen(PORT, () => {
-    console.log(`Es servidor esta funcionando en el puerto ${PORT}`)
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Es servidor esta funcionando en el puerto ${port}`)
 })
