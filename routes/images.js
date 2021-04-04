@@ -1,6 +1,5 @@
 // Rutas para las imágenes
 const express = require('express')
-const upload = require('../libs/storage')
 const router = express.Router()
 const imageController = require('../controllers/imageController')
 const { check } = require('express-validator')
@@ -10,9 +9,9 @@ const auth = require('../middleware/auth')
 // api/images
 router.post('/',
     auth,
-    upload.single('image'),
+    imageController.cargarImagen,
     [
-        check('filename', 'El nombre de la imagen es obligatorio').not().isEmpty(),
+        // check('filename', 'El nombre de la imagen es obligatorio').not().isEmpty(),
         check('difficulty', 'Debes ingresar una dificultad asociada a la imagen').not().isEmpty(),
         check('points', 'Debes ingresar una cantidad de puntos asociados a la imagen').isNumeric(),
     ],
@@ -23,6 +22,28 @@ router.post('/',
 router.get('/',
     auth,
     imageController.obtenerImagenes
+)
+
+// Obtiene las imágenes subidas por usuario
+router.get('/user',
+    auth,
+    imageController.obtenerImagenesPorUsuario
+)
+
+// Eliminar una imagen
+router.delete('/user/:id',
+    auth,
+    imageController.eliminarImagenPorUsuario
+)
+
+router.put('/user/image/:id',
+    auth,
+    imageController.cargarONoImagen,
+    [
+        check('difficulty', 'Debes ingresar una dificultad asociada a la imagen').not().isEmpty(),
+        check('points', 'Debes ingresar una cantidad de puntos asociados a la imagen').isNumeric(),
+    ],
+    imageController.modificarImagenPorUsuario
 )
 
 module.exports = router;

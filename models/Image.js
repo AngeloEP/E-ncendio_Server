@@ -4,12 +4,15 @@ const ImagesSchema = mongoose.Schema({
     filename: {
         type: String,
         required: true,
-        unique: true,
         trim: true
     },
     level_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Level'
+    },
+    user_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Usuario'
     },
     imageUrl: {
         type: String,
@@ -26,12 +29,12 @@ const ImagesSchema = mongoose.Schema({
         required: true
     },
     createdAt: {
-        type: Date,
-        default: Date.now()
+        type: String,
+        // default: Date.now()
     },
     updatedAt: {
-        type: Date,
-        default: Date.now()
+        type: String,
+        // default: Date.now()
     }
     
 })

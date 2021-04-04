@@ -37,7 +37,7 @@ const obj = multer({
     fileFilter: fileFilter
 });
 
-const upload = multer(obj).single('image'); // upload.single('file')
+const upload = multer(obj).single('image');
 
 exports.cargarImagenUsuario = async (req, res, next) => {
     upload(req, res, function (error) {
