@@ -21,6 +21,7 @@ app.use('/public', express.static(path.join(__dirname, '/storage/imgs')));
 app.use('/public/profile_images', express.static(`${__dirname}/storage/profiles_images`))
 
 // Puerto de la app
+app.set('port', process.env.PORT || 4000);
 const port = process.env.PORT || 4000
 
 // Importar rutas para los usuarios

@@ -54,7 +54,7 @@ const UsuariosSchema = mongoose.Schema({
 UsuariosSchema.methods.setImagegUrl = function setImagegUrl(filename) {
     console.log("filename: ", filename)
     const { PORT, APP_HOST } = process.env
-    this.urlFile = `${APP_HOST}:${PORT}/public/profile_image/${filename}`
+    this.urlFile = `${APP_HOST}:${PORT}/public/profile_images/${filename}`
 }
 
 module.exports = mongoose.model('Usuario', UsuariosSchema);
