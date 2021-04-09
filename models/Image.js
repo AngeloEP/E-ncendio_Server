@@ -42,7 +42,7 @@ const ImagesSchema = mongoose.Schema({
 ImagesSchema.methods.setImagegUrl = function setImagegUrl(filename) {
     const { PORT, APP_HOST } = process.env
     // this.imageUrl = `${APP_HOST}:${PORT}/public/${filename}`
-    this.imageUrl = `${APP_HOST}:3000/public/${filename}`
+    this.imageUrl = `${APP_HOST}:4000/public/${filename}`
 }
 
 module.exports = mongoose.model('Image', ImagesSchema);
