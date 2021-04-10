@@ -2,6 +2,12 @@ const express = require("express")
 const conectarDB = require('./config/db')
 const cors = require('cors')
 const path = require('path')
+const AWS = require('aws-sdk')
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_KEY
+});
+
 process.env.PWD = process.cwd()
 
 // Crear el Server
@@ -57,8 +63,44 @@ app.use('/api/tag-words', require('./routes/tagWordAssociations'))
 // Importar rutas para los formularios de contacto
 app.use('/api/contact-form', require('./routes/contactForms'))
 
+// Usando AWS S3
+// About page route.
+// app.get('/api/aws', function(req, res) {
+//     // s3.listBuckets({} , (err, data) => {
+//     //     if (err) {
+//     //         throw err;
+//     //     }
+//     //     console.log(data)
+//     // })
+    
+//     // var parametros = {
+//     //     Bucket: 'e-ncendio'
+//     // }
+//     // s3.listObjectsV2(parametros, (err, data) =>{
+//     //     if (err) {
+//     //         throw err;
+//     //     }
+//     //     console.log(data)
+//     // });
+
+//     var parametrosGetObject = {
+//         Bucket: "e-ncendio",
+//         Key: 'images/tommeme.jpeg'
+//     }
+//     s3.getObject(parametrosGetObject, (err, data) => {
+//         if (err) {
+//             throw err
+//         }
+//         console.log(data)
+//     })
+//     res.send('hello world');
+//   });
+  
 
 // Arrancar el server
-app.listen(port, '0.0.0.0', () => {
+// app.listen(port, '0.0.0.0', () => {
+//     console.log(`Es servidor esta funcionando en el puerto ${port}`)
+// })
+app.listen(port, () => {
     console.log(`Es servidor esta funcionando en el puerto ${port}`)
 })

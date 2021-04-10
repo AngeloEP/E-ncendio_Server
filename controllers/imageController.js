@@ -7,6 +7,13 @@ const upload = require('../libs/storage')
 const moment = require('moment-timezone');
 const fs = require('fs')
 const path = require('path')
+const AWS = require('aws-sdk');
+AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+    signatureVersion: 'v4'
+});
+const S3 = new AWS.S3();
 
 exports.cargarImagen = async (req, res, next) => {
     upload(req, res, function (error) {
@@ -46,14 +53,12 @@ exports.cargarONoImagen = async (req, res, next) => {
 
 exports.guardarImagen = async (req, res) => {
     // Revisar si hay errores
+    console.log("BBBBBBBBBBBBb")
     const errores = validationResult(req)
     if ( !errores.isEmpty() ) {
         return res.status(400).json({ errores: errores.array() })
     }
 
-    // Extraer información de la imagen
-    const { filename } = req.body
-    
     try {
         console.log("AAAAAAAAAAAAAAAAAHHHHHH")
         // Crear la nueva imagen
@@ -63,6 +68,7 @@ exports.guardarImagen = async (req, res) => {
             return res.status(400).json({ msg: 'No ha adjuntado la imagen' })
         }
         // Revisar que el nombre de la imagen no exista
+        console.log("imagen AQUI: ", req.file)
         let { filename } = req.file
         image.setImagegUrl(filename)
         filename = filename.split(".")[0]
@@ -138,12 +144,24 @@ exports.eliminarImagenPorUsuario = async (req, res) => {
         
         let arrayUrl = imagen.imageUrl.split("/");
         let filename = arrayUrl.slice(-1)[0];
-        try {
-            fs.unlinkSync(path.join(__dirname, "../storage/imgs/") + filename)
-            //file removed
-        } catch(err) {
-            return res.status(404).json({ msg: "No se pudo eliminar del directorio" });
+
+        const deleteParams = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: "images/" + filename
         }
+        
+        S3.deleteObject(deleteParams, function(err, data) {
+            if (err) {
+                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen en AWS' })
+            }
+            // console.log("Se eliminó la imagen en AWS!")
+        });
+        // try {
+        //     fs.unlinkSync(path.join(__dirname, "../storage/imgs/") + filename)
+        //     //file removed
+        // } catch(err) {
+        //     return res.status(404).json({ msg: "No se pudo eliminar del directorio" });
+        // }
 
         // Eliminar imagen
         await Image.findOneAndRemove({ _id: req.params.id })
@@ -185,9 +203,6 @@ exports.modificarImagenPorUsuario = async (req, res) => {
         imagenNueva.points = points
 
         if ( req.file ) {
-
-            
-
             let { filename } = req.file
             arrayNewFilename = filename.split(".")
             filename = arrayNewFilename[0]
@@ -199,16 +214,21 @@ exports.modificarImagenPorUsuario = async (req, res) => {
 
             let arrayUrl = imagenAntigua.imageUrl.split("/");
             let filenameDelete = arrayUrl.slice(-1)[0];
-            try {
-                fs.unlinkSync(path.join(__dirname, "../storage/imgs/") + filenameDelete)
-                //file removed
-            } catch(err) {
-                return res.status(404).json({ msg: "No se pudo eliminar del directorio" });
+            const deleteParams = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: "images/" + filenameDelete
             }
+            
+            S3.deleteObject(deleteParams, function(err, data) {
+                if (err) {
+                    res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen en AWS' })
+                }
+            });
             imagenAntigua.setImagegUrl(filename+"."+arrayNewFilename.slice(-1)[0])
             await imagenAntigua.save()
             imagenNueva.filename = filename;
         }
+
         // Guardar Imagen modificada
         imagenAntigua = await Image.findOneAndUpdate(
                         { _id : req.params.id },

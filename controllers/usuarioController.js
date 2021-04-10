@@ -6,13 +6,21 @@ const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 const path = require('path')
 const multer = require('multer')
+const multerS3 = require('multer-s3')
+const AWS = require('aws-sdk');
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_KEY,
+  signatureVersion: 'v4'
+});
+const S3 = new AWS.S3();
 
-const storage = multer.diskStorage({
-    destination: path.join(__dirname, "../storage/profiles_images"),
-    filename: (req, file, cb) => {
-      cb(null, `${file.originalname.split(".")[0]}-${Date.now()}.${file.mimetype.split("/")[1]}`);
-    }
-})
+// const storage = multer.diskStorage({
+//     destination: path.join(__dirname, "../storage/profiles_images"),
+//     filename: (req, file, cb) => {
+//       cb(null, `${file.originalname.split(".")[0]}-${Date.now()}.${file.mimetype.split("/")[1]}`);
+//     }
+// })
 
 let fileFilter = function (req, file, cb) {
     const filetypes = /jpeg|jpg|png|gif/;
@@ -28,13 +36,34 @@ let fileFilter = function (req, file, cb) {
     }
 };
 
+const getUniqFileName = (originalname) => {
+    const name = originalname.split(".")[0];
+    const ext = originalname.split('.')[1];
+    return `${name}.${ext}`;
+  }
+
 const obj = multer({
-    storage,
-    dest: path.join(__dirname, "../storage/profiles_images"),
+    // storage,
+    // dest: path.join(__dirname, "../storage/profiles_images"),
     limits: {
-        fileSize: 1 * 1024 * 1024
+        fileSize: 3 * 1024 * 1024
     },
-    fileFilter: fileFilter
+    fileFilter: fileFilter,
+    storage: multerS3({
+        s3: S3,
+        bucket: process.env.AWS_BUCKET_NAME,
+        acl: 'public-read',
+        contentType: multerS3.AUTO_CONTENT_TYPE,
+        key: function (req, file, cb) {
+          const fileName = getUniqFileName(file.originalname);
+          const s3_inner_directory = 'profile_images';
+          const finalPath = `${s3_inner_directory}/${fileName}`;
+          
+          file.filename = fileName;
+          
+          cb(null, finalPath );
+        }
+      }),
 });
 
 const upload = multer(obj).single('image');
@@ -201,8 +230,26 @@ exports.modificarUsuario = async (req, res) => {
                         );
 
         if ( req.file ) {
-            const { filename } = req.file
-            usuarioAntiguo.setImagegUrl(filename)
+            let { filename } = req.file
+            // usuarioAntiguo.setImagegUrl(filename)
+
+            arrayNewFilename = filename.split(".")
+            filename = arrayNewFilename[0]
+            
+
+            let arrayUrl = usuarioAntiguo.urlFile.split("/");
+            let filenameDelete = arrayUrl.slice(-1)[0];
+            const deleteParams = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: "profile_images/" + filenameDelete
+            }
+            
+            S3.deleteObject(deleteParams, function(err, data) {
+                if (err) {
+                    res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen de usuario en AWS' })
+                }
+            });
+            usuarioAntiguo.setImagegUrl(filename+"."+arrayNewFilename.slice(-1)[0])
         }
         await usuarioAntiguo.save()
 
