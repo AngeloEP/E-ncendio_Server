@@ -30,7 +30,7 @@ router.get('/user',
     imageController.obtenerImagenesPorUsuario
 )
 
-// Eliminar una imagen
+// Eliminar una imagen del usuario
 router.delete('/user/:id',
     auth,
     imageController.eliminarImagenPorUsuario

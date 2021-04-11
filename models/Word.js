@@ -1,15 +1,19 @@
 const mongoose = require('mongoose')
 
 const WordsSchema = mongoose.Schema({
-    level_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Level'
-    },
     name: {
         type: String,
         required: true,
         unique: true,
         trim: true
+    },
+    level_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Level'
+    },
+    user_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Usuario'
     },
     difficulty: {
         type: String,
@@ -20,6 +24,12 @@ const WordsSchema = mongoose.Schema({
         type: Number,
         required: true,
     },
+    createdAt: {
+        type: String,
+    },
+    updatedAt: {
+        type: String,
+    }
 })
 
 module.exports = mongoose.model('Word', WordsSchema);

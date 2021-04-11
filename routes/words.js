@@ -24,4 +24,27 @@ router.post('/',
     wordController.guardarPalabra
 )
 
+// Obtiene las palabras subidas por usuario
+router.get('/user',
+    auth,
+    wordController.obtenerPalabrasPorUsuario
+)
+
+// Eliminar una palabra del usuario
+router.delete('/user/:id',
+    auth,
+    wordController.eliminarPalabraPorUsuario
+)
+
+// Actualizar palabra
+router.put('/user/word/:id',
+    auth,
+    [
+        check('name', 'El nombre de la Palabra es obligatorio').not().isEmpty(),
+        check('difficulty', 'Debes ingresar una dificultad asociada a la palabra').not().isEmpty(),
+        check('points', 'Debes ingresar una cantidad de puntos asociados a la palabra').isNumeric(),
+    ],
+    wordController.modificarPalabraPorUsuario
+)
+
 module.exports = router;
