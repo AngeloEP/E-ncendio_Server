@@ -6,10 +6,14 @@ const profileController = require('../controllers/profileController')
 const { check } = require('express-validator')
 const auth = require('../middleware/auth')
 
+// api/usuarios
 
+router.get('/',
+    auth,
+    usuarioController.obtenerUsuarios
+)
 
 // Crea un usuario
-// api/usuarios
 router.post('/',
     usuarioController.cargarImagenUsuario,
     [
@@ -55,6 +59,25 @@ router.put('/profile/edit/:id',
         check('phone', 'Su teléfono es obligatoro y debe ser de 9 dígitos').isLength( {min:9,max:9} ),
     ],
     usuarioController.modificarUsuario
+)
+
+router.put('/:id/adminYbloqueo',
+    auth,
+    [
+        check('isAdmin', 'Debes señalar tu condición de administrador').not().isEmpty(),
+        check('isBlocked', 'Debes señalar tu condición de Bloqueado o no').not().isEmpty(),
+    ],
+    usuarioController.cambiarAdminConBloqueo
+)
+
+router.get('/:id/images',
+    auth,
+    usuarioController.obtenerImagenesSubidasPorUsuario
+)
+
+router.get('/:id/words',
+    auth,
+    usuarioController.obtenerPalabrasSubidasPorUsuario
 )
 
 module.exports = router;

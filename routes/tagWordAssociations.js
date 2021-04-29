@@ -13,4 +13,16 @@ router.post('/:word/category/:category',
     tagWordAssociationController.crearAsociacionDePalabra
 )
 
+// Obtener asociaciones por usuario
+router.get('/user/:id',
+    auth,
+    tagWordAssociationController.obtenerAsociacionesPorUsuario
+)
+
+// Eliminar(resetear) todas las palabras etiquetadas por usuario
+router.delete('/user/:id',
+    auth,
+    tagWordAssociationController.eliminarAsociacionesPorUsuario
+)
+
 module.exports = router;

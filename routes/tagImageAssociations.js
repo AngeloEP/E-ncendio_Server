@@ -13,4 +13,16 @@ router.post('/:image/category/:category',
     tagImageAssociationController.crearAsociacionDeImagen
 )
 
+// Obtener asociaciones por usuario
+router.get('/user/:id',
+    auth,
+    tagImageAssociationController.obtenerAsociacionesPorUsuario
+)
+
+// Eliminar(resetear) todas las imagenes etiquetadas por usuario
+router.delete('/user/:id',
+    auth,
+    tagImageAssociationController.eliminarAsociacionesPorUsuario
+)
+
 module.exports = router;

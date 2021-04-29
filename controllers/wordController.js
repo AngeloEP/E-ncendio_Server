@@ -1,4 +1,6 @@
 const Word = require('../models/Word')
+const TagWordAssociation = require('../models/TagWordAssociation')
+const Usuario = require('../models/Usuario')
 const Level = require('../models/Level')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -35,6 +37,12 @@ exports.guardarPalabra = async (req, res) => {
         // Fechas de creacion
         word.createdAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
         word.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
+        let usuario = await Usuario.findOne({ "_id": req.usuario.id })
+        if (usuario.isAdmin) {
+            word.isEnabled = true
+        } else {
+            word.isEnabled = false
+        }
 
         await word.save()
 
@@ -48,7 +56,7 @@ exports.guardarPalabra = async (req, res) => {
 
 exports.obtenerPalabras = async (req, res) => {
     try {
-        const palabras = await Word.find({})
+        const palabras = await Word.find({ isEnabled: true })
         res.json({ palabras })
     } catch (error) {
         console.log(error)
@@ -66,6 +74,7 @@ exports.obtenerPalabrasPorUsuario = async (req, res) => {
                 "Palabra": "$name",
                 "Dificultad" : "$difficulty",
                 "Puntos" : "$points",
+                "Estado" : "$isEnabled",
                 "Creado el" : "$createdAt",
                 "Actualizado el" : "$updatedAt",
             } },
@@ -129,6 +138,12 @@ exports.modificarPalabraPorUsuario = async (req, res) => {
         palabraNueva.name = name
         palabraNueva.difficulty = difficulty
         palabraNueva.points = points
+        let usuario = await Usuario.findOne({ "_id": req.usuario.id })
+        if (usuario.isAdmin) {
+            palabraNueva.isEnabled = true
+        } else {
+            palabraNueva.isEnabled = false
+        }
 
         // Guardar Palabra modificada
         palabraAntigua = await Word.findOneAndUpdate(
@@ -145,5 +160,62 @@ exports.modificarPalabraPorUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo modificar la palabra seleccionada')
+    }
+}
+
+exports.habilitarOinhabilitarPalabraPorUsuario = async (req, res) => {
+    try {
+        // Comprobar si existe la palabra
+        let palabraAntigua = await Word.findById(req.params.id)
+
+        if (!palabraAntigua) {
+            return res.status(404).json({ msg: "No existe esa palabra" })
+        }
+        let usuarioModificador = await Usuario.findById(req.usuario.id)
+        if ( !usuarioModificador.isAdmin ) {
+            return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
+        }
+
+        let palabraNueva = {}
+        palabraNueva.isEnabled = !palabraAntigua.isEnabled
+
+        // Guardar palabra modificada
+        palabraAntigua = await Word.findOneAndUpdate(
+                        { _id : req.params.id },
+                        palabraNueva,
+                        { new: true }
+                        );
+
+        
+        await palabraAntigua.save()
+
+        res.json({ palabraAntigua })
+        
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo habilitar/inhabilitar la palabra') 
+    }
+}
+
+exports.eliminarPalabraPorUsuarioDesdeAdmin = async (req, res) => {
+    try {
+        let palabra = await Word.findById(req.params.id);        
+        if (!palabra) {
+            return res.status(404).json({ msg: "No existe la palabra" });
+        }
+
+        let usuarioModificador = await Usuario.findById(req.usuario.id)
+        if ( !usuarioModificador.isAdmin ) {
+            return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
+        }
+
+        await Word.findOneAndRemove({ _id: req.params.id })
+        await TagWordAssociation.deleteMany({ word_id: req.params.id })
+
+        res.json({ msg: "Palabra eliminada correctamente" })
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la palabra' })
     }
 }

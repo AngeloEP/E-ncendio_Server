@@ -47,4 +47,14 @@ router.put('/user/word/:id',
     wordController.modificarPalabraPorUsuario
 )
 
+router.put('/user/word/isEnabled/:id',
+    auth,
+    wordController.habilitarOinhabilitarPalabraPorUsuario
+)
+
+router.delete('/user/word/:id',
+    auth,
+    wordController.eliminarPalabraPorUsuarioDesdeAdmin
+)
+
 module.exports = router;

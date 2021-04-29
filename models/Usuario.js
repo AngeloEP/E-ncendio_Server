@@ -40,14 +40,23 @@ const UsuariosSchema = mongoose.Schema({
         required: true,
         trim: true
     },
+    isBlocked: {
+        type: Boolean,
+        default: false,
+        trim: true
+    },
     isExpert: {
         type: Boolean,
         required: true,
         trim: true
     },
-    register: {
-        type: Date,
-        default: Date.now()
+    isAdmin: {
+        type: Boolean,
+        required: true,
+        trim: true
+    },
+    registerAt: {
+        type: String,
     }
 })
 

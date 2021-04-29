@@ -1,4 +1,6 @@
 const Usuario = require('../models/Usuario')
+const Word = require('../models/Word')
+const Image = require('../models/Image')
 const Profile = require('../models/Profile')
 const Level = require('../models/Level')
 const bcryptjs = require('bcryptjs')
@@ -14,6 +16,8 @@ AWS.config.update({
   signatureVersion: 'v4'
 });
 const S3 = new AWS.S3();
+const moment = require('moment-timezone');
+const mongoose = require('mongoose')
 
 // const storage = multer.diskStorage({
 //     destination: path.join(__dirname, "../storage/profiles_images"),
@@ -116,6 +120,12 @@ exports.crearUsuario = async (req, res, next) => {
         // Hashear el password
         const salt = await bcryptjs.genSalt(10)
         usuario.password = await bcryptjs.hash(password, salt)
+        usuario.registerAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
+        if (usuario.isExpert) {
+            usuario.isAdmin = true
+        } else {
+            usuario.isAdmin = false
+        }
 
         // Guardar el nuevo usuario
         await usuario.save()
@@ -258,5 +268,117 @@ exports.modificarUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo modificar su perfil de usuario')
+    }
+}
+
+exports.obtenerUsuarios = async (req, res, next) => {
+    try {
+        const usuarios = await Usuario.aggregate([
+            { $replaceWith: {
+                "_id": "$_id",
+                "Nombre": "$firstname",
+                "Género" : "$gender",
+                "Edad" : "$age",
+                "Correo" : "$email",
+                "Admin" : "$isAdmin",
+                "Bloqueado" : "$isBlocked",
+            } },
+          ])
+        res.json({ usuarios })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener los usuarios del sitio')
+    }
+}
+
+exports.cambiarAdminConBloqueo = async (req, res) => {
+    try {
+        // Revisar si hay errores
+        const errores = validationResult(req)
+        if ( !errores.isEmpty() ) {
+            return res.status(400).json({ errores: errores.array() })
+        }
+
+        const {
+            isAdmin,
+            isBlocked,
+        } = req.body;
+
+        // Comprobar si existe el usuario
+        let usuarioAntiguo = await Usuario.findById(req.params.id)
+        let usuarioModificador = await Usuario.findById(req.usuario.id)
+
+        if (!usuarioAntiguo) {
+            return res.status(404).json({ msg: "El perfil que desea modificar no existe" })
+        }
+
+        if ( !usuarioModificador ) {
+            return res.status(401).json({ msg: "El usuario que intenta modificar la información no se encuentra registrado" })
+        }
+
+        if ( !usuarioModificador.isAdmin ) {
+            return res.status(401).json({ msg: "El usuario que intenta modificar la información no es un administrador" })
+        }
+
+        const usuarioNuevo = {}
+        usuarioNuevo.isAdmin = isAdmin
+        usuarioNuevo.isBlocked = isBlocked
+        
+        // Guardar Usuario
+        usuarioAntiguo = await Usuario.findOneAndUpdate(
+                        { _id : req.params.id },
+                        usuarioNuevo,
+                        { new: true }
+                        );
+        res.status(200).json({ msg: "El usuario ha sido modificado exitosamente" })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo cambiar la información del usuario')
+    }
+}
+
+exports.obtenerImagenesSubidasPorUsuario = async (req, res) => {
+    try {
+        let id = mongoose.Types.ObjectId(req.params.id);
+        const imagenes = await Image.aggregate([
+            { $match: { user_id: id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Imagen": "$imageUrl",
+                "Nombre" : "$filename",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+        res.json({ imagenes })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener las imágenes de este usuario')
+    }
+}
+
+exports.obtenerPalabrasSubidasPorUsuario = async (req, res) => {
+    try {
+        let id = mongoose.Types.ObjectId(req.params.id);
+        const palabras = await Word.aggregate([
+            { $match: { user_id: id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Palabra": "$name",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+        res.json({ palabras })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener las palabras de este usuario')
     }
 }

@@ -1,4 +1,5 @@
 const Image = require('../models/Image')
+const Usuario = require('../models/Usuario')
 const Level = require('../models/Level')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -8,6 +9,7 @@ const moment = require('moment-timezone');
 const fs = require('fs')
 const path = require('path')
 const AWS = require('aws-sdk');
+const TagImageAssociation = require('../models/TagImageAssociation')
 AWS.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
@@ -87,6 +89,12 @@ exports.guardarImagen = async (req, res) => {
 
         image.createdAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
         image.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
+        let usuario = await Usuario.findOne({ "_id": req.usuario.id })
+        if (usuario.isAdmin) {
+            image.isEnabled = true
+        } else {
+            image.isEnabled = false
+        }
 
         await image.save()
 
@@ -100,7 +108,7 @@ exports.guardarImagen = async (req, res) => {
 
 exports.obtenerImagenes = async (req, res) => {
     try {
-        const imagenes = await Image.find({})
+        const imagenes = await Image.find({ isEnabled: true })
         res.json({ imagenes })
     } catch (error) {
         console.log(error)
@@ -119,6 +127,7 @@ exports.obtenerImagenesPorUsuario = async (req, res) => {
                 "Nombre" : "$filename",
                 "Dificultad" : "$difficulty",
                 "Puntos" : "$points",
+                "Estado" : "$isEnabled",
                 "Creado el" : "$createdAt",
                 "Actualizado el" : "$updatedAt",
             } },
@@ -229,6 +238,13 @@ exports.modificarImagenPorUsuario = async (req, res) => {
             imagenNueva.filename = filename;
         }
 
+        let usuario = await Usuario.findOne({ "_id": req.usuario.id })
+        if (usuario.isAdmin) {
+            imagenNueva.isEnabled = true
+        } else {
+            imagenNueva.isEnabled = false
+        }
+
         // Guardar Imagen modificada
         imagenAntigua = await Image.findOneAndUpdate(
                         { _id : req.params.id },
@@ -244,5 +260,77 @@ exports.modificarImagenPorUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo modificar la imagen seleccionada')
+    }
+}
+
+exports.habilitarOinhabilitarImagenPorUsuario = async (req, res) => {
+    try {
+        // Comprobar si existe la imagen
+        let imagenAntigua = await Image.findById(req.params.id)
+
+        if (!imagenAntigua) {
+            return res.status(404).json({ msg: "No existe esa imagen" })
+        }
+        let usuarioModificador = await Usuario.findById(req.usuario.id)
+        if ( !usuarioModificador.isAdmin ) {
+            return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
+        }
+
+        let imagenNueva = {}
+        imagenNueva.isEnabled = !imagenAntigua.isEnabled
+
+        // Guardar Imagen modificada
+        imagenAntigua = await Image.findOneAndUpdate(
+                        { _id : req.params.id },
+                        imagenNueva,
+                        { new: true }
+                        );
+
+        
+        await imagenAntigua.save()
+
+        res.json({ imagenAntigua })
+        
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo habilitar/inhabilitar la imagen') 
+    }
+}
+
+exports.eliminarImagenPorUsuarioDesdeAdmin = async (req, res) => {
+    try {
+        let imagen = await Image.findById(req.params.id);        
+        if (!imagen) {
+            return res.status(404).json({ msg: "No existe la imagen" });
+        }
+
+        let usuarioModificador = await Usuario.findById(req.usuario.id)
+        if ( !usuarioModificador.isAdmin ) {
+            return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
+        }
+
+        let usuarioImagen = await Image.findById(imagen.user_id);
+        
+        let arrayUrl = imagen.imageUrl.split("/");
+        let filename = arrayUrl.slice(-1)[0];
+
+        const deleteParams = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: "images/" + filename
+        }
+        
+        S3.deleteObject(deleteParams, function(err, data) {
+            if (err) {
+                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen en AWS' })
+            }
+        });
+        await Image.findOneAndRemove({ _id: req.params.id })
+        await TagImageAssociation.deleteMany({ image_id: req.params.id })
+
+        res.json({ msg: "Imagen eliminada correctamente" })
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen' })
     }
 }

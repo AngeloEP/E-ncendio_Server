@@ -46,4 +46,14 @@ router.put('/user/image/:id',
     imageController.modificarImagenPorUsuario
 )
 
+router.put('/user/image/isEnabled/:id',
+    auth,
+    imageController.habilitarOinhabilitarImagenPorUsuario
+)
+
+router.delete('/user/image/:id',
+    auth,
+    imageController.eliminarImagenPorUsuarioDesdeAdmin
+)
+
 module.exports = router;

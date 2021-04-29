@@ -28,6 +28,11 @@ const ImagesSchema = mongoose.Schema({
         type: Number,
         required: true
     },
+    isEnabled: {
+        type: Boolean,
+        required: true,
+        trim: true
+    },
     createdAt: {
         type: String,
         // default: Date.now()
