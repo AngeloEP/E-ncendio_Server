@@ -189,6 +189,19 @@ exports.habilitarOinhabilitarPalabraPorUsuario = async (req, res) => {
         
         await palabraAntigua.save()
 
+        palabraAntigua = await Word.aggregate([
+            { $match: { _id: palabraAntigua._id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Palabra": "$name",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+
         res.json({ palabraAntigua })
         
     } catch (error) {

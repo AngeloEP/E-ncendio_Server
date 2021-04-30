@@ -289,6 +289,20 @@ exports.habilitarOinhabilitarImagenPorUsuario = async (req, res) => {
         
         await imagenAntigua.save()
 
+        imagenAntigua = await Image.aggregate([
+            { $match: { _id: imagenAntigua._id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Imagen": "$imageUrl",
+                "Nombre" : "$filename",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+
         res.json({ imagenAntigua })
         
     } catch (error) {
