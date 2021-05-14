@@ -1,4 +1,6 @@
 const Word = require('../models/Word')
+const Profile = require('../models/Profile')
+const League = require('../models/League')
 const TagWordAssociation = require('../models/TagWordAssociation')
 const Usuario = require('../models/Usuario')
 const Level = require('../models/Level')
@@ -17,6 +19,8 @@ exports.guardarPalabra = async (req, res) => {
     const { name } = req.body
 
     try {
+        let perfilAntiguo = await Profile.findOne({ user_id: req.usuario.id })
+        let ligaAntigua = await League.findOne({ _id: perfilAntiguo.league_id })
         // Revisar que la Palabra no exista
         let word = await Word.findOne({ name })
 
@@ -43,6 +47,30 @@ exports.guardarPalabra = async (req, res) => {
         } else {
             word.isEnabled = false
         }
+
+        let nuevoPerfil = {}
+        nuevoPerfil.score = perfilAntiguo.score + 10
+
+        if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
+            let nuevaLiga = ""
+            switch (ligaAntigua.league) {
+                case "Bronce":
+                    nuevaLiga = "Plata"
+                    break;
+
+                case "Plata":
+                    nuevaLiga = "Oro"
+                    break;
+            
+                default:
+                    nuevaLiga = "Oro"
+                    break;
+            }
+            ligaNueva = await League.findOne({ league: nuevaLiga })
+            nuevoPerfil.league_id = ligaNueva._id
+        }
+
+        await Profile.findOneAndUpdate({ _id : perfilAntiguo._id }, nuevoPerfil, { new: true } );
 
         await word.save()
 

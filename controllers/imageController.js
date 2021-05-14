@@ -1,4 +1,6 @@
 const Image = require('../models/Image')
+const Profile = require('../models/Profile')
+const League = require('../models/League')
 const Usuario = require('../models/Usuario')
 const Level = require('../models/Level')
 const { validationResult } = require('express-validator')
@@ -55,14 +57,15 @@ exports.cargarONoImagen = async (req, res, next) => {
 
 exports.guardarImagen = async (req, res) => {
     // Revisar si hay errores
-    console.log("BBBBBBBBBBBBb")
     const errores = validationResult(req)
     if ( !errores.isEmpty() ) {
         return res.status(400).json({ errores: errores.array() })
     }
 
     try {
-        console.log("AAAAAAAAAAAAAAAAAHHHHHH")
+        let perfilAntiguo = await Profile.findOne({ user_id: req.usuario.id })
+        let ligaAntigua = await League.findOne({ _id: perfilAntiguo.league_id })
+
         // Crear la nueva imagen
         image = new Image(req.body)
 
@@ -70,7 +73,6 @@ exports.guardarImagen = async (req, res) => {
             return res.status(400).json({ msg: 'No ha adjuntado la imagen' })
         }
         // Revisar que el nombre de la imagen no exista
-        console.log("imagen AQUI: ", req.file)
         let { filename } = req.file
         image.setImagegUrl(filename)
         filename = filename.split(".")[0]
@@ -95,6 +97,30 @@ exports.guardarImagen = async (req, res) => {
         } else {
             image.isEnabled = false
         }
+
+        let nuevoPerfil = {}
+        nuevoPerfil.score = perfilAntiguo.score + 10
+
+        if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
+            let nuevaLiga = ""
+            switch (ligaAntigua.league) {
+                case "Bronce":
+                    nuevaLiga = "Plata"
+                    break;
+
+                case "Plata":
+                    nuevaLiga = "Oro"
+                    break;
+            
+                default:
+                    nuevaLiga = "Oro"
+                    break;
+            }
+            ligaNueva = await League.findOne({ league: nuevaLiga })
+            nuevoPerfil.league_id = ligaNueva._id
+        }
+
+        await Profile.findOneAndUpdate({ _id : perfilAntiguo._id }, nuevoPerfil, { new: true } );
 
         await image.save()
 

@@ -12,7 +12,7 @@ router.get('/',
 
 router.put('/:id',
     auth,
-    profileController.actualizarPerfil
+    profileController.actualizarPuntuacionYLigaPerfil
 )
 
 module.exports = router;

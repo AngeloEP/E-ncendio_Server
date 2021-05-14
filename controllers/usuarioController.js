@@ -3,6 +3,7 @@ const Word = require('../models/Word')
 const Image = require('../models/Image')
 const Profile = require('../models/Profile')
 const Level = require('../models/Level')
+const League = require('../models/League')
 const bcryptjs = require('bcryptjs')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -217,6 +218,9 @@ exports.modificarUsuario = async (req, res) => {
         // Comprobar si existe el usuario
         let usuarioAntiguo = await Usuario.findById(req.params.id)
 
+        let perfilAntiguo = await Profile.findOne({ user_id: usuarioAntiguo._id })
+        let ligaAntigua = await League.findOne({ _id: perfilAntiguo.league_id })
+
         if (!usuarioAntiguo) {
             return res.status(404).json({ msg: "No existe ese Perfil de Usuario" })
         }
@@ -225,19 +229,15 @@ exports.modificarUsuario = async (req, res) => {
             return res.status(401).json({ msg: "No Autorizado, no puede editar el Perfil de este Usuario" })
         }
 
-        const usuarioNuevo = {}
-        usuarioNuevo.firstname = firstname
-        usuarioNuevo.lastname = lastname
-        usuarioNuevo.phone = phone
-        usuarioNuevo.age = age
-        usuarioNuevo.gender = gender
         
-        // Guardar Usuario
-        usuarioAntiguo = await Usuario.findOneAndUpdate(
-                        { _id : req.params.id },
-                        usuarioNuevo,
-                        { new: true }
-                        );
+        let nuevoPerfil = {}
+        nuevoPerfil.score = perfilAntiguo.score
+        if ( firstname != usuarioAntiguo.firstname ) nuevoPerfil.score += 5; 
+        if ( lastname != usuarioAntiguo.lastname ) nuevoPerfil.score += 5; 
+        if ( phone != usuarioAntiguo.phone ) nuevoPerfil.score += 5; 
+        if ( age != usuarioAntiguo.age ) nuevoPerfil.score += 5; 
+        if ( gender != usuarioAntiguo.gender ) nuevoPerfil.score += 5;
+        
 
         if ( req.file ) {
             let { filename } = req.file
@@ -260,8 +260,46 @@ exports.modificarUsuario = async (req, res) => {
                 }
             });
             usuarioAntiguo.setImagegUrl(filename+"."+arrayNewFilename.slice(-1)[0])
+            await usuarioAntiguo.save()
+            nuevoPerfil.score += 5;
         }
-        await usuarioAntiguo.save()
+
+        if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
+            let nuevaLiga = ""
+            switch (ligaAntigua.league) {
+                case "Bronce":
+                    nuevaLiga = "Plata"
+                    break;
+
+                case "Plata":
+                    nuevaLiga = "Oro"
+                    break;
+            
+                default:
+                    nuevaLiga = "Oro"
+                    break;
+            }
+            ligaNueva = await League.findOne({ league: nuevaLiga })
+            nuevoPerfil.league_id = ligaNueva._id
+        }
+
+        await Profile.findOneAndUpdate({ _id : perfilAntiguo._id }, nuevoPerfil, { new: true } );
+
+        const usuarioNuevo = {}
+        usuarioNuevo.firstname = firstname
+        usuarioNuevo.lastname = lastname
+        usuarioNuevo.phone = phone
+        usuarioNuevo.age = age
+        usuarioNuevo.gender = gender
+        
+        // Guardar Usuario
+        usuarioAntiguo = await Usuario.findOneAndUpdate(
+                        { _id : req.params.id },
+                        usuarioNuevo,
+                        { new: true }
+                        );
+
+        // await usuarioAntiguo.save()
 
         res.json({ usuarioAntiguo })
 

@@ -56,7 +56,7 @@ exports.obtenerTodosLosPerfiles = async (req, res) => {
     }
 }
 
-exports.actualizarPerfil = async (req, res) => {
+exports.actualizarPuntuacionYLigaPerfil = async (req, res) => {
     try {
 
         const {
