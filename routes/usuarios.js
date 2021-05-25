@@ -80,4 +80,9 @@ router.get('/:id/words',
     usuarioController.obtenerPalabrasSubidasPorUsuario
 )
 
+router.get('/:id/hangmans',
+    auth,
+    usuarioController.obtenerAhorcadosSubidosPorUsuario
+)
+
 module.exports = router;

@@ -36,6 +36,9 @@ app.use('/api/usuarios', require('./routes/usuarios'))
 // Importar rutas para las imágenes
 app.use('/api/images', require('./routes/images'))
 
+// Importar rutas para las 4 imágenes y su palabra
+app.use('/api/hangmans', require('./routes/hangmans'))
+
 // Importar rutas para autentificaciones
 app.use('/api/auth', require('./routes/auth'))
 
@@ -59,6 +62,9 @@ app.use('/api/tag-images', require('./routes/tagImageAssociations'))
 
 // Importar rutas para las asociaciones de Palabras
 app.use('/api/tag-words', require('./routes/tagWordAssociations'))
+
+// Importar rutas para las asociaciones de ahorcados
+app.use('/api/tag-hangmans', require('./routes/tagHangmanAssociations'))
 
 // Importar rutas para los formularios de contacto
 app.use('/api/contact-form', require('./routes/contactForms'))

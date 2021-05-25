@@ -1,6 +1,7 @@
 const Usuario = require('../models/Usuario')
 const Word = require('../models/Word')
 const Image = require('../models/Image')
+const Hangman = require('../models/Hangman')
 const Profile = require('../models/Profile')
 const Level = require('../models/Level')
 const League = require('../models/League')
@@ -229,14 +230,15 @@ exports.modificarUsuario = async (req, res) => {
             return res.status(401).json({ msg: "No Autorizado, no puede editar el Perfil de este Usuario" })
         }
 
-        
-        let nuevoPerfil = {}
+        let addPoints = 0;
+        if (ligaAntigua.league === "Plata") addPoints = 7; else addPoints = 5;
+        let nuevoPerfil = {};
         nuevoPerfil.score = perfilAntiguo.score
-        if ( firstname != usuarioAntiguo.firstname ) nuevoPerfil.score += 5; 
-        if ( lastname != usuarioAntiguo.lastname ) nuevoPerfil.score += 5; 
-        if ( phone != usuarioAntiguo.phone ) nuevoPerfil.score += 5; 
-        if ( age != usuarioAntiguo.age ) nuevoPerfil.score += 5; 
-        if ( gender != usuarioAntiguo.gender ) nuevoPerfil.score += 5;
+        if ( firstname != usuarioAntiguo.firstname ) nuevoPerfil.score += addPoints; 
+        if ( lastname != usuarioAntiguo.lastname ) nuevoPerfil.score += addPoints; 
+        if ( phone != usuarioAntiguo.phone ) nuevoPerfil.score += addPoints; 
+        if ( age != usuarioAntiguo.age ) nuevoPerfil.score += addPoints; 
+        if ( gender != usuarioAntiguo.gender ) nuevoPerfil.score += addPoints;
         
 
         if ( req.file ) {
@@ -418,5 +420,31 @@ exports.obtenerPalabrasSubidasPorUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo obtener las palabras de este usuario')
+    }
+}
+
+exports.obtenerAhorcadosSubidosPorUsuario = async (req, res) => {
+    try {
+        let id = mongoose.Types.ObjectId(req.params.id);
+        const ahorcados = await Hangman.aggregate([
+            { $match: { user_id: id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Imagen1": "$imageUrl_1",
+                "Imagen2": "$imageUrl_2",
+                "Imagen3": "$imageUrl_3",
+                "Imagen4": "$imageUrl_4",
+                "Palabra" : "$associatedWord",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+        res.json({ ahorcados })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener los ahorcados de este usuario')
     }
 }

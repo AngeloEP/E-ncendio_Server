@@ -48,8 +48,10 @@ exports.guardarPalabra = async (req, res) => {
             word.isEnabled = false
         }
 
+        let addPoints = 0;
         let nuevoPerfil = {}
-        nuevoPerfil.score = perfilAntiguo.score + 10
+        if (ligaAntigua.league === "Oro") addPoints = 15; else addPoints = 25;
+        nuevoPerfil.score = perfilAntiguo.score + addPoints;
 
         if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
             let nuevaLiga = ""
@@ -149,8 +151,6 @@ exports.modificarPalabraPorUsuario = async (req, res) => {
     try {
         const {
             name,
-            difficulty,
-            points,
         } = req.body;
         // Comprobar si existe la palabra
         let palabraAntigua = await Word.findById(req.params.id)
@@ -164,8 +164,6 @@ exports.modificarPalabraPorUsuario = async (req, res) => {
 
         let palabraNueva = {}
         palabraNueva.name = name
-        palabraNueva.difficulty = difficulty
-        palabraNueva.points = points
         let usuario = await Usuario.findOne({ "_id": req.usuario.id })
         if (usuario.isAdmin) {
             palabraNueva.isEnabled = true
@@ -258,5 +256,62 @@ exports.eliminarPalabraPorUsuarioDesdeAdmin = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la palabra' })
+    }
+}
+
+exports.modificarPalabraDesdeAdmin = async (req, res) => {
+    // Revisar si hay errores
+    const errores = validationResult(req)
+    if ( !errores.isEmpty() ) {
+        return res.status(400).json({ errores: errores.array() })
+    }
+
+    try {
+        const {
+            difficulty,
+            points,
+        } = req.body;
+        // Comprobar si existe la palabra
+        let palabraAntigua = await Word.findById(req.params.id)
+
+        if (!palabraAntigua) {
+            return res.status(404).json({ msg: "No existe esa palabra" })
+        }
+        let usuarioModificador = await Usuario.findById(req.usuario.id)
+        if ( !usuarioModificador.isAdmin ) {
+            return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
+        }
+ 
+        let palabraNueva = {}
+        palabraNueva.difficulty = difficulty
+        palabraNueva.points = points
+
+        // Guardar palabra modificada
+        palabraAntigua = await Word.findOneAndUpdate(
+                        { _id : req.params.id },
+                        palabraNueva,
+                        { new: true }
+                        );
+
+        await palabraAntigua.save()
+
+        palabraNueva = await Word.aggregate([
+            { $match: { _id: palabraAntigua._id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Palabra": "$name",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+
+        res.json({ palabraNueva })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo modificar la palabra seleccionada')
     }
 }

@@ -56,12 +56,6 @@ exports.cargarONoImagen = async (req, res, next) => {
 }
 
 exports.guardarImagen = async (req, res) => {
-    // Revisar si hay errores
-    const errores = validationResult(req)
-    if ( !errores.isEmpty() ) {
-        return res.status(400).json({ errores: errores.array() })
-    }
-
     try {
         let perfilAntiguo = await Profile.findOne({ user_id: req.usuario.id })
         let ligaAntigua = await League.findOne({ _id: perfilAntiguo.league_id })
@@ -98,8 +92,10 @@ exports.guardarImagen = async (req, res) => {
             image.isEnabled = false
         }
 
+        let addPoints = 0;
         let nuevoPerfil = {}
-        nuevoPerfil.score = perfilAntiguo.score + 10
+        if (ligaAntigua.league === "Plata") addPoints = 30; else if(ligaAntigua.league === "Oro") addPoints = 20; else addPoints = 35;
+        nuevoPerfil.score = perfilAntiguo.score + addPoints
 
         if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
             let nuevaLiga = ""
@@ -211,18 +207,7 @@ exports.eliminarImagenPorUsuario = async (req, res) => {
 }
 
 exports.modificarImagenPorUsuario = async (req, res) => {
-
-    // Revisar si hay errores
-    const errores = validationResult(req)
-    if ( !errores.isEmpty() ) {
-        return res.status(400).json({ errores: errores.array() })
-    }
-
     try {
-        const {
-            difficulty,
-            points,
-        } = req.body;
         // Comprobar si existe la imagen
         let imagenAntigua = await Image.findById(req.params.id)
 
@@ -234,35 +219,31 @@ exports.modificarImagenPorUsuario = async (req, res) => {
         }
 
         let imagenNueva = {}
-        imagenNueva.difficulty = difficulty
-        imagenNueva.points = points
 
-        if ( req.file ) {
-            let { filename } = req.file
-            arrayNewFilename = filename.split(".")
-            filename = arrayNewFilename[0]
-            let existeImagen = await Image.findOne({ filename })
-            if ( existeImagen ) {
-                return res.status(400).json({ msg: 'La imagen ingresada ya existe' })
-            }
-            
-
-            let arrayUrl = imagenAntigua.imageUrl.split("/");
-            let filenameDelete = arrayUrl.slice(-1)[0];
-            const deleteParams = {
-                Bucket: process.env.AWS_BUCKET_NAME,
-                Key: "images/" + filenameDelete
-            }
-            
-            S3.deleteObject(deleteParams, function(err, data) {
-                if (err) {
-                    res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen en AWS' })
-                }
-            });
-            imagenAntigua.setImagegUrl(filename+"."+arrayNewFilename.slice(-1)[0])
-            await imagenAntigua.save()
-            imagenNueva.filename = filename;
+        let { filename } = req.file
+        arrayNewFilename = filename.split(".")
+        filename = arrayNewFilename[0]
+        let existeImagen = await Image.findOne({ filename })
+        if ( existeImagen ) {
+            return res.status(400).json({ msg: 'La imagen ingresada ya existe' })
         }
+        
+
+        let arrayUrl = imagenAntigua.imageUrl.split("/");
+        let filenameDelete = arrayUrl.slice(-1)[0];
+        const deleteParams = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: "images/" + filenameDelete
+        }
+        
+        S3.deleteObject(deleteParams, function(err, data) {
+            if (err) {
+                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen en AWS' })
+            }
+        });
+        imagenAntigua.setImagegUrl(filename+"."+arrayNewFilename.slice(-1)[0])
+        await imagenAntigua.save()
+        imagenNueva.filename = filename;
 
         let usuario = await Usuario.findOne({ "_id": req.usuario.id })
         if (usuario.isAdmin) {
@@ -372,5 +353,63 @@ exports.eliminarImagenPorUsuarioDesdeAdmin = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen' })
+    }
+}
+
+exports.modificarImagenDesdeAdmin = async (req, res) => {
+    // Revisar si hay errores
+    const errores = validationResult(req)
+    if ( !errores.isEmpty() ) {
+        return res.status(400).json({ errores: errores.array() })
+    }
+
+    try {
+        const {
+            difficulty,
+            points,
+        } = req.body;
+        // Comprobar si existe la imagen
+        let imagenAntigua = await Image.findById(req.params.id)
+
+        if (!imagenAntigua) {
+            return res.status(404).json({ msg: "No existe esa imagen" })
+        }
+        let usuarioModificador = await Usuario.findById(req.usuario.id)
+        if ( !usuarioModificador.isAdmin ) {
+            return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
+        }
+ 
+        let imagenNueva = {}
+        imagenNueva.difficulty = difficulty
+        imagenNueva.points = points
+
+        // Guardar Imagen modificada
+        imagenAntigua = await Image.findOneAndUpdate(
+                        { _id : req.params.id },
+                        imagenNueva,
+                        { new: true }
+                        );
+
+        await imagenAntigua.save()
+
+        imagenNueva = await Image.aggregate([
+            { $match: { _id: imagenAntigua._id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Imagen": "$imageUrl",
+                "Nombre" : "$filename",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+
+        res.json({ imagenNueva })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo modificar la imagen seleccionada')
     }
 }

@@ -10,11 +10,6 @@ const auth = require('../middleware/auth')
 router.post('/',
     auth,
     imageController.cargarImagen,
-    [
-        // check('filename', 'El nombre de la imagen es obligatorio').not().isEmpty(),
-        check('difficulty', 'Debes ingresar una dificultad asociada a la imagen').not().isEmpty(),
-        check('points', 'Debes ingresar una cantidad de puntos asociados a la imagen').isNumeric(),
-    ],
     imageController.guardarImagen
 )
 
@@ -38,11 +33,7 @@ router.delete('/user/:id',
 
 router.put('/user/image/:id',
     auth,
-    imageController.cargarONoImagen,
-    [
-        check('difficulty', 'Debes ingresar una dificultad asociada a la imagen').not().isEmpty(),
-        check('points', 'Debes ingresar una cantidad de puntos asociados a la imagen').isNumeric(),
-    ],
+    imageController.cargarImagen,
     imageController.modificarImagenPorUsuario
 )
 
@@ -54,6 +45,15 @@ router.put('/user/image/isEnabled/:id',
 router.delete('/user/image/:id',
     auth,
     imageController.eliminarImagenPorUsuarioDesdeAdmin
+)
+
+router.put('/user/image/difficultyAndPoints/:id',
+    auth,
+    [
+        check('difficulty', 'Debes ingresar una dificultad asociada a la imagen').not().isEmpty(),
+        check('points', 'Debes ingresar una cantidad de puntos asociados a la imagen').isNumeric(),
+    ],
+    imageController.modificarImagenDesdeAdmin
 )
 
 module.exports = router;

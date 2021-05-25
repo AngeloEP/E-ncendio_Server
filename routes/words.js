@@ -18,8 +18,6 @@ router.post('/',
     auth,
     [
         check('name', 'El nombre de la Palabra es obligatorio').not().isEmpty(),
-        check('difficulty', 'Debes ingresar una dificultad asociada a la Palabra').not().isEmpty(),
-        check('points', 'Debes ingresar una cantidad de puntos asociados a la Palabra').isNumeric(),
     ],
     wordController.guardarPalabra
 )
@@ -41,8 +39,6 @@ router.put('/user/word/:id',
     auth,
     [
         check('name', 'El nombre de la Palabra es obligatorio').not().isEmpty(),
-        check('difficulty', 'Debes ingresar una dificultad asociada a la palabra').not().isEmpty(),
-        check('points', 'Debes ingresar una cantidad de puntos asociados a la palabra').isNumeric(),
     ],
     wordController.modificarPalabraPorUsuario
 )
@@ -55,6 +51,15 @@ router.put('/user/word/isEnabled/:id',
 router.delete('/user/word/:id',
     auth,
     wordController.eliminarPalabraPorUsuarioDesdeAdmin
+)
+
+router.put('/user/word/difficultyAndPoints/:id',
+    auth,
+    [
+        check('difficulty', 'Debes ingresar una dificultad asociada a la palabra').not().isEmpty(),
+        check('points', 'Debes ingresar una cantidad de puntos asociados a la palabra').isNumeric(),
+    ],
+    wordController.modificarPalabraDesdeAdmin
 )
 
 module.exports = router;

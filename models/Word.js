@@ -17,12 +17,12 @@ const WordsSchema = mongoose.Schema({
     },
     difficulty: {
         type: String,
-        required: true,
+        default: "Ninguna",
         trim: true
     },
     points: {
         type: Number,
-        required: true,
+        default: 0,
     },
     isEnabled: {
         type: Boolean,
