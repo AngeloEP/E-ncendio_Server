@@ -17,9 +17,18 @@ exports.crearAsociacionDeImagen = async (req, res) => {
         imagenAsociada.image_id = req.params.image
         imagenAsociada.category_id = req.params.category
 
-        await imagenAsociada.save()
+        let imagenRepetida = {}
+        imagenRepetida.category_id = req.params.category
 
-        res.json(imagenAsociada)
+        etiquetaExistente = await TagImageAssociation.findOne({ image_id: req.params.image })
+        if (etiquetaExistente) {
+            await TagImageAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, imagenRepetida, { new: true } );
+            res.json(imagenRepetida)
+        } else {
+            await imagenAsociada.save()
+    
+            res.json(imagenAsociada)
+        }
 
     } catch (error) {
         console.log(error)

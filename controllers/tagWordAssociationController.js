@@ -16,9 +16,18 @@ exports.crearAsociacionDePalabra = async (req, res) => {
         palabraAsociada.word_id = req.params.word
         palabraAsociada.category_id = req.params.category
 
-        await palabraAsociada.save()
+        let palabraRepetida = {}
+        palabraRepetida.category_id = req.params.category
 
-        res.json(palabraAsociada)
+        etiquetaExistente = await TagWordAssociation.findOne({ word_id: req.params.word })
+        if (etiquetaExistente) {
+            await TagWordAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, palabraRepetida, { new: true } );
+            res.json(palabraRepetida)
+        } else {
+            await palabraAsociada.save()
+    
+            res.json(palabraAsociada)
+        }
 
     } catch (error) {
         console.log(error)

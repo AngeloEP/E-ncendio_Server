@@ -17,4 +17,10 @@ router.get('/',
     authController.usuarioAutenticado
 )
 
+// cerrar sesión y actualizar su hora de salida
+router.get('/logout',
+    auth,
+    authController.cerrarSesion
+)
+
 module.exports = router;

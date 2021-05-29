@@ -60,7 +60,6 @@ exports.cargarONoImagenes = async (req, res, next) => {
             return res.status(500).json({ msg: error.message});
         } else {
             if (req.files === undefined) {
-                console.log('uploadProductsImages Error: No File Selected!');
                 return res.status(500).json({
                     status: 'Fallido',
                     message: 'Error: no hay archivos seleccionados'
@@ -75,7 +74,6 @@ exports.cargarONoImagenes = async (req, res, next) => {
                     // console.log('filenm', fileLocation);
                     images.push(fileLocation)
                 }
-                console.log("exito imagenes")
                 next();
             }
         }
@@ -271,7 +269,7 @@ exports.modificarAhorcadoPorUsuario = async (req, res) => {
 
         let ahorcadoNuevo = {}
         ahorcadoNuevo.associatedWord = associatedWord;
-        console.log(req.files)
+        
         if (req.files.length != 0) {
             // Revisar que el nombre del ahorcado no exista
             let existeAhorcado = await Hangman.findOne({ associatedWord })

@@ -17,9 +17,18 @@ exports.crearAsociacionDeAhorcado = async (req, res) => {
         ahorcadoAsociado.hangman_id = req.params.hangman
         ahorcadoAsociado.associatedWord = req.params.associatedWord
 
-        await ahorcadoAsociado.save()
+        let ahorcadoRepetido = {}
+        ahorcadoRepetido.associatedWord = req.params.associatedWord
 
-        res.json(ahorcadoAsociado)
+        etiquetaExistente = await TagHangmanAssociation.findOne({ hangman_id: req.params.hangman })
+        if (etiquetaExistente) {
+            await TagHangmanAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, ahorcadoRepetido, { new: true } );
+            res.json(ahorcadoRepetido)
+        } else {
+            await ahorcadoAsociado.save()
+    
+            res.json(ahorcadoAsociado)
+        }
 
     } catch (error) {
         console.log(error)
