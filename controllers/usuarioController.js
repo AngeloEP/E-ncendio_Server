@@ -1,6 +1,7 @@
 const Usuario = require('../models/Usuario')
 const Word = require('../models/Word')
 const Image = require('../models/Image')
+const Log = require('../models/Log')
 const Hangman = require('../models/Hangman')
 const Profile = require('../models/Profile')
 const Level = require('../models/Level')
@@ -141,8 +142,15 @@ exports.crearUsuario = async (req, res, next) => {
         // Firmar el JWT
         jwt.sign(payload, process.env.SECRETA, {
             expiresIn: 3600 // 1 hora?
-        }, (error, token) => {
+        }, async (error, token) => {
             if (error) throw error;
+
+            // crear registro de cuando se logeo
+            let login = new Log();
+            login.user_id = usuario.id;
+            login.loginAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
+            login.logoutAt = moment().add(1, 'hour').tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
+            await login.save()
 
             // Mensaje de confirmación
             res.json({ token: token })
