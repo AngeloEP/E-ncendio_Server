@@ -85,4 +85,9 @@ router.get('/:id/hangmans',
     usuarioController.obtenerAhorcadosSubidosPorUsuario
 )
 
+router.get('/:id/tips',
+    auth,
+    usuarioController.obtenerTipsSubidosPorUsuario
+)
+
 module.exports = router;

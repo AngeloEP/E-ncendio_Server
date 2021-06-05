@@ -3,6 +3,7 @@ const Word = require('../models/Word')
 const Image = require('../models/Image')
 const Log = require('../models/Log')
 const Hangman = require('../models/Hangman')
+const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
 const Level = require('../models/Level')
 const League = require('../models/League')
@@ -455,5 +456,26 @@ exports.obtenerAhorcadosSubidosPorUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo obtener los ahorcados de este usuario')
+    }
+}
+
+exports.obtenerTipsSubidosPorUsuario = async (req, res) => {
+    try {
+        let id = mongoose.Types.ObjectId(req.params.id);
+        const tips = await Tip.aggregate([
+            { $match: { user_id: id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Texto" : "$text",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+        res.json({ tips })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener los Tips de este usuario')
     }
 }

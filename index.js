@@ -33,9 +33,6 @@ const port = process.env.PORT || 4000
 // Importar rutas para los usuarios
 app.use('/api/usuarios', require('./routes/usuarios'))
 
-// Importar rutas para las imágenes
-app.use('/api/images', require('./routes/images'))
-
 // Importar rutas para las 4 imágenes y su palabra
 app.use('/api/hangmans', require('./routes/hangmans'))
 
@@ -54,8 +51,14 @@ app.use('/api/categories', require('./routes/categories'))
 // Importar rutas para perfiles de usuario
 app.use('/api/profiles', require('./routes/profiles'))
 
-// Importar rutas para agregar las palabras a etiquetar
+// Importar rutas para las palabras en el sitio
 app.use('/api/words', require('./routes/words'))
+
+// Importar rutas para las imágenes
+app.use('/api/images', require('./routes/images'))
+
+// Importar rutas para los tips del sitio
+app.use('/api/tips', require('./routes/tips'))
 
 // Importar rutas para las asociaciones de imágenes
 app.use('/api/tag-images', require('./routes/tagImageAssociations'))
@@ -65,6 +68,9 @@ app.use('/api/tag-words', require('./routes/tagWordAssociations'))
 
 // Importar rutas para las asociaciones de ahorcados
 app.use('/api/tag-hangmans', require('./routes/tagHangmanAssociations'))
+
+// Importar rutas para las asociaciones de Tips
+app.use('/api/view-tips', require('./routes/viewedTipAssociations'))
 
 // Importar rutas para los formularios de contacto
 app.use('/api/contact-form', require('./routes/contactForms'))
