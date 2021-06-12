@@ -130,7 +130,8 @@ exports.guardarImagen = async (req, res) => {
 
 exports.obtenerImagenes = async (req, res) => {
     try {
-        const imagenes = await Image.find({ isEnabled: true })
+        let imagenes = await Image.find({ isEnabled: true })
+        imagenes = imagenes.sort(function() {return Math.random() - 0.5});
         res.json({ imagenes })
     } catch (error) {
         console.log(error)

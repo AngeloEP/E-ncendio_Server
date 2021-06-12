@@ -86,7 +86,8 @@ exports.guardarPalabra = async (req, res) => {
 
 exports.obtenerPalabras = async (req, res) => {
     try {
-        const palabras = await Word.find({ isEnabled: true })
+        let palabras = await Word.find({ isEnabled: true })
+        palabras = palabras.sort(function() {return Math.random() - 0.5});
         res.json({ palabras })
     } catch (error) {
         console.log(error)

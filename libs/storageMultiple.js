@@ -9,7 +9,7 @@ AWS.config.update({
 const S3 = new AWS.S3();
 const path = require('path')
 let fileFilter = function (req, file, cb) {
-  const filetypes = /jpeg|jpg|png|gif/;
+  const filetypes = /jpeg|JPEG|jpg|JPG|png|PNG|gif|GIF/;
   const mimetype = filetypes.test(file.mimetype);
   const extname = filetypes.test(path.extname(file.originalname));
   if (mimetype && extname) {

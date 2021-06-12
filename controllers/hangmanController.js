@@ -163,7 +163,8 @@ exports.guardarImagenesPalabra = async (req, res) => {
 
 exports.obtenerImagenesPalabra = async (req, res) => {
     try {
-        const ahorcados = await Hangman.find({ isEnabled: true })
+        let ahorcados = await Hangman.find({ isEnabled: true })
+        ahorcados = ahorcados.sort(function() {return Math.random() - 0.5});
         res.json({ ahorcados })
     } catch (error) {
         console.log(error)
