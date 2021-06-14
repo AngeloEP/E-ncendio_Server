@@ -39,7 +39,6 @@ exports.crearAsociacionDeAhorcado = async (req, res) => {
 exports.obtenerAsociacionesPorUsuario = async (req, res) => {
     try {
         let id = mongoose.Types.ObjectId(req.params.id);
-        console.log(id)
         // const asociacionesAhorcados = await TagHangmanAssociation.aggregate([
         //     { $match: { user_id: id } },
         //     // { $lookup: {from: 'categories', localField: 'category_id', foreignField: '_id', as: 'category_id'} },
@@ -58,7 +57,6 @@ exports.obtenerAsociacionesPorUsuario = async (req, res) => {
         // ])
         const asociacionesAhorcados = await TagHangmanAssociation.find({ user_id: id })
                                     .populate("hangman_id");
-        console.log(asociacionesAhorcados)
         res.json({ asociacionesAhorcados })
     } catch (error) {
         console.log(error)

@@ -29,7 +29,7 @@ exports.crearAsociacionDeTip = async (req, res) => {
 
 exports.obtenerAsociacionesPorUsuario = async (req, res) => {
     try {
-        const asociacionesTips = await ViewedTipAssociation.find({ user_id: id })
+        const asociacionesTips = await ViewedTipAssociation.find({ user_id: req.params.id })
                                     .populate("tip_id");
         res.json({ asociacionesTips })
     } catch (error) {

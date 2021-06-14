@@ -43,7 +43,6 @@ exports.cargarImagenes = async (req, res, next) => {
                     // console.log('filenm', fileLocation);
                     images.push(fileLocation)
                 }
-                console.log("exito imagenes")
                 next();
             }
         }
