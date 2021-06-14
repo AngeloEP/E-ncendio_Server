@@ -258,19 +258,20 @@ exports.modificarUsuario = async (req, res) => {
             arrayNewFilename = filename.split(".")
             filename = arrayNewFilename[0]
             
-
-            let arrayUrl = usuarioAntiguo.urlFile.split("/");
-            let filenameDelete = arrayUrl.slice(-1)[0];
-            const deleteParams = {
-                Bucket: process.env.AWS_BUCKET_NAME,
-                Key: "profile_images/" + filenameDelete
-            }
-            
-            S3.deleteObject(deleteParams, function(err, data) {
-                if (err) {
-                    res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen de usuario en AWS' })
+            if (usuarioAntiguo.urlFile) {
+                let arrayUrl = usuarioAntiguo.urlFile.split("/");
+                let filenameDelete = arrayUrl.slice(-1)[0];
+                const deleteParams = {
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: "profile_images/" + filenameDelete
                 }
-            });
+                
+                S3.deleteObject(deleteParams, function(err, data) {
+                    if (err) {
+                        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen de usuario en AWS' })
+                    }
+                });
+            }
             usuarioAntiguo.setImagegUrl(filename+"."+arrayNewFilename.slice(-1)[0])
             await usuarioAntiguo.save()
             nuevoPerfil.score += 5;
