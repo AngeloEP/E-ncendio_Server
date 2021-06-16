@@ -31,7 +31,7 @@ exports.crearPerfil = async (req, res) => {
         perfil.league_id = liga['_id']
 
         // Iniciar el Puntaje del juego del perfil en 0
-        perfil.score = 0
+        perfil.score = 1
 
         await perfil.save()
 
