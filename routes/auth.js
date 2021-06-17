@@ -11,6 +11,16 @@ router.post('/',
     authController.autenticarUsuario
 )
 
+// Comprobar correo existente
+router.post('/send-code',
+    authController.enviarCodigo
+)
+
+// Cambiar contraseña
+router.post('/reset-password',
+    authController.cambiarContraseña
+)
+
 // Obtiene el usuario autenticado
 router.get('/',
     auth,
@@ -22,5 +32,7 @@ router.get('/logout',
     auth,
     authController.cerrarSesion
 )
+
+
 
 module.exports = router;

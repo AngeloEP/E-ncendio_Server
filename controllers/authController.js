@@ -4,6 +4,22 @@ const bcryptjs = require('bcryptjs')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 const moment = require('moment-timezone');
+const transporter = require('../config/mailer');
+var handlebars = require('handlebars');
+var fs = require('fs');
+const path = require('path')
+
+var readHTMLFile = function(path, callback) {
+    fs.readFile(path, {encoding: 'utf-8'}, function (err, html) {
+        if (err) {
+            throw err;
+            callback(err);
+        }
+        else {
+            callback(null, html);
+        }
+    });
+};
 
 // api/auth
 exports.autenticarUsuario = async (req, res) => {
@@ -57,6 +73,67 @@ exports.autenticarUsuario = async (req, res) => {
     }
 
 }
+
+//Comprobar si usuario de tal correo existe
+exports.enviarCodigo = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const usuario = await Usuario.findOne({ email: email }).select('-password')
+        if (usuario) {
+            var correo = require('../mailtemplates/codeToResetPassword.html');
+            correo = correo.text.toString();
+            var subject = "Validar correo";
+
+            readHTMLFile(path.join(__dirname, "../mailtemplates/codeToResetPassword.html"), async (err, html) => {
+                var template = handlebars.compile(html);
+                var codigo = Math.random().toString(36).substring(7);
+                var replacements = {
+                    code: codigo
+                };
+                var htmlToSend = template(replacements);
+
+                await transporter.sendMail({
+                    from: '"E-ncendio 👻" <e.encendio@example.com>',
+                    to: email, // list of receivers
+                    subject: subject,
+                    html: htmlToSend, // html body
+                }, function (err, responseStatus) {
+                    if (err) {
+                        res.status(400).send({ msg: err})
+                    }
+                    res.status(200).json({ codigo });
+                });
+            })
+        }
+        else {
+            res.status(500).json({ msg: "Correo no válido" })
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ msg: 'Hubo un error no se pudo obtener el usuario con este correo' })
+    }
+}
+
+
+// Cambiar la contraseña del usuario
+exports.cambiarContraseña = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        let nuevoUsuario = {}
+        const usuario = await Usuario.findOne({ email: email })
+
+        // Hashear el password
+        const salt = await bcryptjs.genSalt(10)
+        nuevoUsuario.password = await bcryptjs.hash(password, salt)
+        
+        await Usuario.findOneAndUpdate({ _id : usuario._id }, nuevoUsuario, { new: true } );
+        res.status(200).json({ msg: "Contraseña modificada exitosamente" })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ msg: 'No se pudo modificar la contraseña' })
+    }
+}
+
 
 // Obtiene que usuario esta autenticado
 exports.usuarioAutenticado = async (req, res) => {
