@@ -1,8 +1,10 @@
 const Usuario = require('../models/Usuario')
+const UserBuyStore = require('../models/UserBuyStore')
 const Word = require('../models/Word')
 const Image = require('../models/Image')
 const Log = require('../models/Log')
 const Hangman = require('../models/Hangman')
+const DailyTask = require('../models/DailyTask')
 const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
 const Level = require('../models/Level')
@@ -225,6 +227,8 @@ exports.modificarUsuario = async (req, res) => {
             phone,
             age,
             gender,
+            frame,
+            nickname,
         } = req.body;
         // Comprobar si existe el usuario
         let usuarioAntiguo = await Usuario.findById(req.params.id)
@@ -249,6 +253,8 @@ exports.modificarUsuario = async (req, res) => {
         if ( phone != usuarioAntiguo.phone ) nuevoPerfil.score += addPoints; 
         if ( age != usuarioAntiguo.age ) nuevoPerfil.score += addPoints; 
         if ( gender != usuarioAntiguo.gender ) nuevoPerfil.score += addPoints;
+        if ( frame != perfilAntiguo.frame ) nuevoPerfil.score += addPoints;
+        if ( nickname != perfilAntiguo.nickname ) nuevoPerfil.score += addPoints;
         
 
         if ( req.file ) {
@@ -312,9 +318,51 @@ exports.modificarUsuario = async (req, res) => {
                         { new: true }
                         );
 
-        // await usuarioAntiguo.save()
+        let perfil = await Profile.findOne({user_id: req.usuario.id})
+        let marco = await UserBuyStore.findOne({user_id: req.usuario.id, name: frame })
+        nuevoPerfil = {};
+        nuevoPerfil.frameUsed = marco.name;
+        nuevoPerfil.frameUsedCss = marco.nameCss;
+        nuevoPerfil.nicknameUsed = nickname;
+        nuevoPerfil.editProfileCount = perfil.editProfileCount + 1;
+        await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
 
-        res.json({ usuarioAntiguo })
+        let edits = nuevoPerfil.editProfileCount;
+        let recompensa = null
+        if ([5,10,15,20,25].includes(edits)) {
+            recompensa = {
+                msg: "Por haber modificado ".concat(edits).concat(" veces tu perfil, obtuviste "),
+                count: edits,
+                firePoints: edits
+            }
+
+            nuevoPerfil = {};
+            nuevoPerfil.firePoints = perfil.firePoints + edits
+            perfil = await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+        }
+
+        let recompensaTareas = null
+        let nuevaTarea = {}
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Profile", mode: "counts" })
+        if (tareas.length > 0) {
+            tareas.forEach( async (tareita) => {
+                nuevaTarea.newCount = tareita.newCount + 1;
+                if ( nuevaTarea.newCount === tareita.total ) {
+                    nuevaTarea.isClaimed = true;
+                    recompensaTareas = {
+                        msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                        count: tareita.total,
+                        firePoints: 10
+                    }
+                    nuevoPerfil = {};
+                    nuevoPerfil.firePoints = perfil.firePoints + 10
+                    await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                }
+                await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+            })
+        }
+
+        res.json({ usuarioAntiguo, reward: recompensa, rewardTasks: recompensaTareas })
 
     } catch (error) {
         console.log(error)

@@ -3,6 +3,7 @@ const Profile = require('../models/Profile')
 const League = require('../models/League')
 const ViewedTipAssociation = require('../models/ViewedTipAssociation')
 const Usuario = require('../models/Usuario')
+const DailyTask = require('../models/DailyTask')
 const Level = require('../models/Level')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -76,7 +77,44 @@ exports.guardarTip = async (req, res) => {
 
         await tip.save()
 
-        res.json(tip)
+        perfilAntiguo = await Profile.findOne({user_id: req.usuario.id})
+        let id = mongoose.Types.ObjectId(req.usuario.id);
+        let uploads = await Tip.countDocuments({ user_id: id });
+        let recompensa = null
+        if ([5,10,15,20,25].includes(uploads)) {
+            recompensa = {
+                msg: "Por haber aportado con ".concat(uploads).concat(" tips al sitio, obtuviste "),
+                count: uploads,
+                firePoints: uploads
+            }
+
+            nuevoPerfil = {};
+            nuevoPerfil.firePoints = perfilAntiguo.firePoints + uploads
+            await Profile.findOneAndUpdate({ _id : perfilAntiguo._id }, nuevoPerfil, { new: true } )
+        }
+
+        let recompensaTareas = null
+        let nuevaTarea = {}
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Tip", mode: "uploads" })
+        if (tareas.length > 0) {
+            tareas.forEach( async (tareita) => {
+                nuevaTarea.newCount = tareita.newCount + 1;
+                if ( nuevaTarea.newCount === tareita.total ) {
+                    nuevaTarea.isClaimed = true;
+                    recompensaTareas = {
+                        msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                        count: tareita.total,
+                        firePoints: 15
+                    }
+                    nuevoPerfil = {};
+                    nuevoPerfil.firePoints = perfil.firePoints + 15
+                    await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                }
+                await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+            })
+        }
+
+        res.json({tip, reward: recompensa, rewardTasks: recompensaTareas })
         
     } catch (error) {
         console.log(error)

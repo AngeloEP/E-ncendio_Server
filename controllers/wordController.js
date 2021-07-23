@@ -1,6 +1,7 @@
 const Word = require('../models/Word')
 const Profile = require('../models/Profile')
 const League = require('../models/League')
+const DailyTask = require('../models/DailyTask')
 const TagWordAssociation = require('../models/TagWordAssociation')
 const Usuario = require('../models/Usuario')
 const Level = require('../models/Level')
@@ -76,7 +77,44 @@ exports.guardarPalabra = async (req, res) => {
 
         await word.save()
 
-        res.json(word)
+        perfilAntiguo = await Profile.findOne({user_id: req.usuario.id})
+        let id = mongoose.Types.ObjectId(req.usuario.id);
+        let uploads = await Word.countDocuments({ user_id: id });
+        let recompensa = null
+        if ([5,10,15,20,25].includes(uploads)) {
+            recompensa = {
+                msg: "Por haber aportado con ".concat(uploads).concat(" palabras al sitio, obtuviste "),
+                count: uploads,
+                firePoints: uploads
+            }
+
+            nuevoPerfil = {};
+            nuevoPerfil.firePoints = perfilAntiguo.firePoints + uploads
+            await Profile.findOneAndUpdate({ _id : perfilAntiguo._id }, nuevoPerfil, { new: true } )
+        }
+
+        let recompensaTareas = null
+        let nuevaTarea = {}
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Word", mode: "uploads" })
+        if (tareas.length > 0) {
+            tareas.forEach( async (tareita) => {
+                nuevaTarea.newCount = tareita.newCount + 1;
+                if ( nuevaTarea.newCount === tareita.total ) {
+                    nuevaTarea.isClaimed = true;
+                    recompensaTareas = {
+                        msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                        count: tareita.total,
+                        firePoints: 10
+                    }
+                    nuevoPerfil = {};
+                    nuevoPerfil.firePoints = perfil.firePoints + 10
+                    await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                }
+                await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+            })
+        }
+
+        res.json({word, reward: recompensa, rewardTasks: recompensaTareas })
         
     } catch (error) {
         console.log(error)

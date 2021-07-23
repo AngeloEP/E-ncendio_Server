@@ -1,4 +1,6 @@
 const Usuario = require('../models/Usuario')
+const Profile = require('../models/Profile')
+const DailyTask = require('../models/DailyTask')
 const Log = require('../models/Log')
 const bcryptjs = require('bcryptjs')
 const { validationResult } = require('express-validator')
@@ -8,6 +10,7 @@ const transporter = require('../config/mailer');
 var handlebars = require('handlebars');
 var fs = require('fs');
 const path = require('path')
+const mongoose = require('mongoose')
 
 var readHTMLFile = function(path, callback) {
     fs.readFile(path, {encoding: 'utf-8'}, function (err, html) {
@@ -63,9 +66,45 @@ exports.autenticarUsuario = async (req, res) => {
             login.loginAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             login.logoutAt = moment().add(1, 'hour').tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             await login.save()
+
+            let id = mongoose.Types.ObjectId(usuario.id);
+            let logins = await Log.countDocuments({ user_id: id });
+            let recompensa = null
+            if ([5,15,30,50,100,200].includes(logins)) {
+                recompensa = {
+                    msg: "Por haber ingresado a Encendio ".concat(logins).concat(" veces, obtuviste "),
+                    count: logins,
+                    firePoints: logins
+                }
+                let perfil = await Profile.findOne({user_id: id})
+                const nuevoPerfil = {}
+                nuevoPerfil.firePoints = perfil.firePoints + logins
+                await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+            }
+
+            let recompensaTareas = null
+            let nuevaTarea = {}
+            let tareas = await DailyTask.find({ user_id: id, isActivated: true, isClaimed: false, type: "Login", mode: "logins" })
+            if (tareas.length > 0) {
+                tareas.forEach( async (tareita) => {
+                    nuevaTarea.newCount = tareita.newCount + 1;
+                    if ( nuevaTarea.newCount === tareita.total ) {
+                        nuevaTarea.isClaimed = true;
+                        recompensaTareas = {
+                            msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                            count: tareita.total,
+                            firePoints: 15
+                        }
+                        nuevoPerfil = {};
+                        nuevoPerfil.firePoints = perfil.firePoints + 15
+                        await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                    }
+                    await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+                })
+            }
             
             // Mensaje de confirmación
-            res.json({ token: token })
+            res.json({ token: token, reward: recompensa, rewardTasks: recompensaTareas })
         })
 
     } catch (error) {

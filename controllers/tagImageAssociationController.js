@@ -1,5 +1,7 @@
 const TagImageAssociation = require('../models/TagImageAssociation')
 const Usuario = require('../models/Usuario')
+const Profile = require('../models/Profile')
+const DailyTask = require('../models/DailyTask')
 const Image = require('../models/Image')
 const Category = require('../models/Category')
 const { validationResult } = require('express-validator')
@@ -20,14 +22,53 @@ exports.crearAsociacionDeImagen = async (req, res) => {
         let imagenRepetida = {}
         imagenRepetida.category_id = req.params.category
 
-        etiquetaExistente = await TagImageAssociation.findOne({ image_id: req.params.image })
+        let perfil = await Profile.findOne({user_id: req.usuario.id})
+        let nuevoPerfil = {};
+        nuevoPerfil.imageTagCount = perfil.imageTagCount + 1;
+        await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+
+        let tags = nuevoPerfil.imageTagCount;
+        let recompensa = null
+        if ([10,25,50,100,200].includes(tags)) {
+            recompensa = {
+                msg: "Por etiquetar ".concat(tags).concat(" imágenes, obtuviste "),
+                count: tags,
+                firePoints: tags
+            }
+
+            nuevoPerfil = {};
+            nuevoPerfil.firePoints = perfil.firePoints + tags
+            await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+        }
+
+        let recompensaTareas = null
+        let nuevaTarea = {}
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Image", mode: "counts" })
+        if (tareas.length > 0) {
+            tareas.forEach( async (tareita) => {
+                nuevaTarea.newCount = tareita.newCount + 1;
+                if ( nuevaTarea.newCount === tareita.total ) {
+                    nuevaTarea.isClaimed = true;
+                    recompensaTareas = {
+                        msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                        count: tareita.total,
+                        firePoints: 25
+                    }
+                    nuevoPerfil = {};
+                    nuevoPerfil.firePoints = perfil.firePoints + 25
+                    await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                }
+                await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+            })
+        }
+
+        etiquetaExistente = await TagImageAssociation.findOne({ user_id: req.usuario.id, image_id: req.params.image })
         if (etiquetaExistente) {
             await TagImageAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, imagenRepetida, { new: true } );
-            res.json(imagenRepetida)
+            res.json({imagenRepetida, reward: recompensa, rewardTasks: recompensaTareas })
         } else {
             await imagenAsociada.save()
-    
-            res.json(imagenAsociada)
+            res.json({imagenAsociada, reward: recompensa, rewardTasks: recompensaTareas })
         }
 
     } catch (error) {

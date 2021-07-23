@@ -1,6 +1,7 @@
 const Hangman = require('../models/Hangman')
 const TagHangmanAssociation = require('../models/TagHangmanAssociation')
 const Profile = require('../models/Profile')
+const DailyTask = require('../models/DailyTask')
 const League = require('../models/League')
 const Usuario = require('../models/Usuario')
 const Level = require('../models/Level')
@@ -152,7 +153,44 @@ exports.guardarImagenesPalabra = async (req, res) => {
 
         await hangman.save()
 
-        res.json(hangman)
+        perfilAntiguo = await Profile.findOne({user_id: req.usuario.id})
+        let id = mongoose.Types.ObjectId(req.usuario.id);
+        let uploads = await Hangman.countDocuments({ user_id: id });
+        let recompensa = null
+        if ([5,10,15,20,25].includes(uploads)) {
+            recompensa = {
+                msg: "Por haber aportado ".concat(uploads).concat(" veces contenido para los ahorcados al sitio, obtuviste "),
+                count: uploads,
+                firePoints: uploads
+            }
+
+            nuevoPerfil = {};
+            nuevoPerfil.firePoints = perfilAntiguo.firePoints + uploads
+            await Profile.findOneAndUpdate({ _id : perfilAntiguo._id }, nuevoPerfil, { new: true } )
+        }
+
+        let recompensaTareas = null
+        let nuevaTarea = {}
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Hangman", mode: "uploads" })
+        if (tareas.length > 0) {
+            tareas.forEach( async (tareita) => {
+                nuevaTarea.newCount = tareita.newCount + 1;
+                if ( nuevaTarea.newCount === tareita.total ) {
+                    nuevaTarea.isClaimed = true;
+                    recompensaTareas = {
+                        msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                        count: tareita.total,
+                        firePoints: 15
+                    }
+                    nuevoPerfil = {};
+                    nuevoPerfil.firePoints = perfil.firePoints + 15
+                    await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                }
+                await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+            })
+        }
+
+        res.json({hangman, reward: recompensa, rewardTasks: recompensaTareas })
 
     } catch (error) {
         console.log(error)

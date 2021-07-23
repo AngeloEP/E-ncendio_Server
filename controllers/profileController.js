@@ -108,6 +108,7 @@ exports.actualizarPuntuacionYLigaPerfil = async (req, res) => {
         res.json({ perfil })
 
     } catch (error) {
-        
+        console.log(error)
+        res.status(400).send('No se pudo modificar su puntaje')
     }
 }

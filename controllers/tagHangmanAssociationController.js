@@ -1,6 +1,8 @@
 const TagHangmanAssociation = require('../models/TagHangmanAssociation')
 const Usuario = require('../models/Usuario')
 const Hangman = require('../models/Hangman')
+const Profile = require('../models/Profile')
+const DailyTask = require('../models/DailyTask')
 const Category = require('../models/Category')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -20,14 +22,55 @@ exports.crearAsociacionDeAhorcado = async (req, res) => {
         let ahorcadoRepetido = {}
         ahorcadoRepetido.associatedWord = req.params.associatedWord
 
-        etiquetaExistente = await TagHangmanAssociation.findOne({ hangman_id: req.params.hangman })
+        let perfil = await Profile.findOne({user_id: req.usuario.id})
+        let nuevoPerfil = {};
+        nuevoPerfil.hangmanTagCount = perfil.hangmanTagCount + 1;
+        await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+
+        let id = mongoose.Types.ObjectId(req.usuario.id);
+        let tags = nuevoPerfil.hangmanTagCount;
+        let recompensa = null
+        if ([10,25,50,100,200].includes(tags)) {
+            recompensa = {
+                msg: "Por completar ".concat(tags).concat(" ahorcados, obtuviste "),
+                count: tags,
+                firePoints: tags
+            }
+
+            nuevoPerfil = {};
+            nuevoPerfil.firePoints = perfil.firePoints + tags
+            await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+        }
+
+        let recompensaTareas = null
+        let nuevaTarea = {}
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Hangman", mode: "counts" })
+        if (tareas.length > 0) {
+            tareas.forEach( async (tareita) => {
+                nuevaTarea.newCount = tareita.newCount + 1;
+                if ( nuevaTarea.newCount === tareita.total ) {
+                    nuevaTarea.isClaimed = true;
+                    recompensaTareas = {
+                        msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                        count: tareita.total,
+                        firePoints: 25
+                    }
+                    nuevoPerfil = {};
+                    nuevoPerfil.firePoints = perfil.firePoints + 25
+                    await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                }
+                await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+            })
+        }
+
+        etiquetaExistente = await TagHangmanAssociation.findOne({user_id: req.usuario.id, hangman_id: req.params.hangman })
         if (etiquetaExistente) {
             await TagHangmanAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, ahorcadoRepetido, { new: true } );
-            res.json(ahorcadoRepetido)
+            res.json({ahorcadoRepetido, reward: recompensa, rewardTasks: recompensaTareas })
         } else {
             await ahorcadoAsociado.save()
     
-            res.json(ahorcadoAsociado)
+            res.json({ahorcadoAsociado, reward: recompensa, rewardTasks: recompensaTareas })
         }
 
     } catch (error) {

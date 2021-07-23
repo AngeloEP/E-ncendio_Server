@@ -7,6 +7,9 @@ const s3 = new AWS.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY
 });
+const cron = require('node-cron');
+const DailyTasks = require("./scheduled tasks/AddDailyTasks");
+const DeliverDailyRewards = require("./scheduled tasks/BestParticipants");
 
 process.env.PWD = process.cwd()
 
@@ -30,8 +33,29 @@ app.use('/public/profile_images', express.static(`${__dirname}/storage/profiles_
 app.set('port', process.env.PORT || 4000);
 const port = process.env.PORT || 4000
 
+// Cambiar Tareas Diarias
+// cron.schedule('15 22 * * *', function() {
+// cron.schedule('* * * * *', function() {
+//     DailyTasks.addTasks();
+// });
+
+// Entregar recompensas a los 3 primeros puestos del Ranking
+cron.schedule('* * * * *', function() {
+// cron.schedule('* * * * *', function() {
+    DeliverDailyRewards.deliver();
+});
+
 // Importar rutas para los usuarios
 app.use('/api/usuarios', require('./routes/usuarios'))
+
+// Importar rutas para las tareas
+app.use('/api/dailyTasks', require('./routes/dailyTasks'))
+
+// Importar rutas para la tienda
+app.use('/api/stores', require('./routes/stores'))
+
+// Importar rutas para la compra de cosas en tienda
+app.use('/api/userBuyStores', require('./routes/userBuyStores'))
 
 // Importar rutas para las 4 imágenes y su palabra
 app.use('/api/hangmans', require('./routes/hangmans'))

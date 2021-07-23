@@ -1,5 +1,7 @@
 const TagWordAssociation = require('../models/TagWordAssociation')
 const Usuario = require('../models/Usuario')
+const Profile = require('../models/Profile')
+const DailyTask = require('../models/DailyTask')
 const Category = require('../models/Category')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -19,14 +21,54 @@ exports.crearAsociacionDePalabra = async (req, res) => {
         let palabraRepetida = {}
         palabraRepetida.category_id = req.params.category
 
-        etiquetaExistente = await TagWordAssociation.findOne({ word_id: req.params.word })
+        let perfil = await Profile.findOne({user_id: req.usuario.id})
+        let nuevoPerfil = {};
+        nuevoPerfil.wordTagCount = perfil.wordTagCount + 1;
+        await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+
+        let tags = nuevoPerfil.wordTagCount;
+        let recompensa = null
+        if ([10,25,50,100,200].includes(tags)) {
+            recompensa = {
+                msg: "Por etiquetar ".concat(tags).concat(" palabras, obtuviste "),
+                count: tags,
+                firePoints: tags
+            }
+
+            nuevoPerfil = {};
+            nuevoPerfil.firePoints = perfil.firePoints + tags
+            await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+        }
+
+        let recompensaTareas = null
+        let nuevaTarea = {}
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Word", mode: "counts" })
+        if (tareas.length > 0) {
+            tareas.forEach( async (tareita) => {
+                nuevaTarea.newCount = tareita.newCount + 1;
+                if ( nuevaTarea.newCount === tareita.total ) {
+                    nuevaTarea.isClaimed = true;
+                    recompensaTareas = {
+                        msg: "Cumpliste tu tarea de: ".concat(tareita.message).concat(", obtuviste "),
+                        count: tareita.total,
+                        firePoints: 25
+                    }
+                    nuevoPerfil = {};
+                    nuevoPerfil.firePoints = perfil.firePoints + 25
+                    await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )
+                }
+                await DailyTask.findOneAndUpdate({ _id : tareita._id }, nuevaTarea, { new: true } )
+            })
+        }
+
+        etiquetaExistente = await TagWordAssociation.findOne({ user_id: req.usuario.id, word_id: req.params.word })
         if (etiquetaExistente) {
             await TagWordAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, palabraRepetida, { new: true } );
-            res.json(palabraRepetida)
+            res.json({palabraRepetida, reward: recompensa, rewardTasks: recompensaTareas })
         } else {
             await palabraAsociada.save()
     
-            res.json(palabraAsociada)
+            res.json({palabraAsociada, reward: recompensa, rewardTasks: recompensaTareas })
         }
 
     } catch (error) {
