@@ -36,12 +36,12 @@ const port = process.env.PORT || 4000
 // Cambiar Tareas Diarias
 // cron.schedule('15 22 * * *', function() {
 // cron.schedule('* * * * *', function() {
-//     DailyTasks.addTasks();
 // });
 
 // Entregar recompensas a los 3 primeros puestos del Ranking
-cron.schedule('* * * * *', function() {
+cron.schedule('0 0 * * *', function() {
 // cron.schedule('* * * * *', function() {
+    // DailyTasks.addTasks();
     DeliverDailyRewards.deliver();
 });
 
