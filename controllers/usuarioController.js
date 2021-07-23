@@ -7,6 +7,7 @@ const Hangman = require('../models/Hangman')
 const DailyTask = require('../models/DailyTask')
 const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
+const Task = require('../models/Task')
 const Level = require('../models/Level')
 const League = require('../models/League')
 const bcryptjs = require('bcryptjs')
@@ -155,6 +156,37 @@ exports.crearUsuario = async (req, res, next) => {
             login.loginAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             login.logoutAt = moment().add(1, 'hour').tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             await login.save()
+
+            let ligaBronce = await League.findOne({league: "Bronce"})
+            let elegidos = []
+            let randomData = []
+            let result;
+            randomData = await Task.find({ league_id: ligaBronce._id });
+            for (let index = 0; index < 3; index++) {
+                var random = Math.floor(Math.random() * (randomData.length) )
+                result = randomData[random];
+                elegidos.push(result)
+                randomData = randomData.filter(function(value, index, arr){ 
+                    return (value.mode !== result.mode) | (value.type !== result.type);
+                });
+            }
+            elegidos.forEach(async element => {
+                // Add document to user
+                let task = new DailyTask;
+                task.user_id = usuario.id;
+                task.league_id = element.league_id;
+                task.message = element.message;
+                task.type = element.type;
+                task.mode = element.mode;
+                task.total = element.total;
+                task.newCount = 0;
+                task.isClaimed = false;
+                task.isActivated = true;
+                task.createdAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
+                task.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
+                await task.save();
+            });
+            elegidos.splice(0, elegidos.length);
 
             // Mensaje de confirmación
             res.json({ token: token })
