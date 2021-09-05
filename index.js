@@ -41,7 +41,7 @@ const port = process.env.PORT || 4000
 // Entregar recompensas a los 3 primeros puestos del Ranking
 cron.schedule('0 0 * * *', function() {
 // cron.schedule('* * * * *', function() {
-    // DailyTasks.addTasks();
+    DailyTasks.addTasks();
     DeliverDailyRewards.deliver();
 });
 
