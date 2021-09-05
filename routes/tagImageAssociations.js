@@ -25,4 +25,14 @@ router.delete('/user/:id',
     tagImageAssociationController.eliminarAsociacionesPorUsuario
 )
 
+// Obtener distribución de imágenes etiquetadas
+router.get('/distribution',
+    tagImageAssociationController.obtenerDistribucionImagenesEtiquetadas
+)
+
+// Obtener imágenes de cierta etiqueta
+router.get('/category/:category',
+    tagImageAssociationController.imagenesEtiquetadasPorCategoria
+)
+
 module.exports = router;

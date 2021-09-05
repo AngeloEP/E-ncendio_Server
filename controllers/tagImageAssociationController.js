@@ -116,3 +116,129 @@ exports.eliminarAsociacionesPorUsuario = async (req, res) => {
         res.status(400).send('No se pudo obtener las asociaciones de imágenes de este usuario')
     }
 }
+
+exports.obtenerDistribucionImagenesEtiquetadas = async (req, res) => {
+    try {
+        let porcentajeEtiquetas = []
+        porcentajeEtiquetas.push(
+            await TagImageAssociation.aggregate([
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                },
+                {
+                    $group: {
+                        _id:  "$category._id",
+                        category: {$first : "$category.name"},
+                        count: {$sum: 1},
+                    },
+                },
+                {$unwind: "$category"},
+                {$unwind: "$_id"},
+                { "$sort": { "count": -1 } },
+            ])
+        );
+        porcentajeEtiquetas = porcentajeEtiquetas[0]
+        let totalAmount = 0;
+        porcentajeEtiquetas.forEach( data => totalAmount = totalAmount + data.count);
+        porcentajeEtiquetas.push({total: totalAmount})
+        res.json(porcentajeEtiquetas)
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener la distribución de etiquetas en imágenes')
+    }
+}
+
+exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
+    try {
+        let imagenesEtiquetadas = await TagImageAssociation.aggregate([
+            {
+                $lookup: {
+                    from: "images",
+                    localField: "image_id",
+                    foreignField: "_id",
+                    as: "image"
+                }
+            },
+            {
+                $lookup: {
+                    from: "categories",
+                    localField: "category_id",
+                    foreignField: "_id",
+                    as: "category"
+                }
+            },
+            {$match: { "category.name": req.params.category } },
+            { $unset: "user_id" },
+            { $unset: "category_id" },
+            { $unset: "image_id" },
+            {$unwind: "$image"},
+            { 
+                $set: {
+                    "image": { "_id": "$image._id"},
+                    "category": "$category.name",
+                }
+            },
+            {$unwind: "$category"},
+            { $unset: "image.points"},
+            { $unset: "image.filename"},
+            { $unset: "image.createdAt"},
+            { $unset: "image.updatedAt"},
+            { $unset: "image.isEnabled" },
+            { $unset: "image.user_id" },
+            { $unset: "image.difficulty" },
+            { $unset: "image.level_id" },
+        ])
+        
+       var nuevo = []
+        imagenesEtiquetadas.forEach( async (imagen, index) => {
+            let distribucion = await TagImageAssociation.aggregate([
+                {$match: { "image_id": imagen.image._id } },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                },
+                {
+                    $group: {
+                        _id:  "$category._id",
+                        category: {$first : "$category.name"},
+                        count: {$sum: 1},
+                    },
+                },
+                { $unset: "user_id" },
+                { $unset: "image_id" },
+                { "$sort": { "count": -1 } },
+            ])
+                let impacto = distribucion.filter(element => { return element.category[0] === "Impacto" })
+                let riesgo = distribucion.filter(element => { return element.category[0] === "Riesgo" })
+                let recuperacion = distribucion.filter(element => { return element.category[0] === "Recuperación" })
+                let mitigacion = distribucion.filter(element => { return element.category[0] === "Mitigación" })
+                let combate = distribucion.filter(element => { return element.category[0] === "Combate" })
+                let amenaza = distribucion.filter(element => { return element.category[0] === "Amenaza" })
+                let prevencion = distribucion.filter(element => { return element.category[0] === "Prevención" })
+                if (impacto.length > 0) { imagen.impacto = impacto[0].count } else { imagen.impacto = 0 }
+                if (riesgo.length > 0) { imagen.riesgo = riesgo[0].count } else { imagen.riesgo = 0}
+                if (recuperacion.length > 0) { imagen.recuperacion = recuperacion[0].count } else { imagen.recuperacion = 0}
+                if (mitigacion.length > 0) { imagen.mitigacion = mitigacion[0].count } else { imagen.mitigacion = 0}
+                if (combate.length > 0) { imagen.combate = combate[0].count } else { imagen.combate = 0}
+                if (amenaza.length > 0) { imagen.amenaza = amenaza[0].count } else { imagen.amenaza = 0}
+                if (prevencion.length > 0) { imagen.prevencion = prevencion[0].count } else { imagen.prevencion = 0}
+                await nuevo.push(imagen)
+                const todas = await Promise.all(nuevo)
+                if (todas.length === imagenesEtiquetadas.length){
+                    res.json(nuevo)
+                }
+            })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('Ocurrió un error, no se pudo obtener las imágenes de esta categoría')
+    }
+}
