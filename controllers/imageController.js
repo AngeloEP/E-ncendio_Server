@@ -458,19 +458,21 @@ exports.modificarImagenDesdeAdmin = async (req, res) => {
 exports.cambiarDailyTasks = async (req, res) => {
     try {
         // Add field
-        // let response = await DailyTask.updateMany({ }, [ {$set : { "roles": []} } ])
+
+        // let response = await Usuario.update({ _id: "60b3dcef8fe1f20015a49a91" }, [ {$set : { "city": "" } } ])
+        // let response = await Usuario.updateMany({ }, [ {$set : { "isFireRelated": false} } ])
 
         // Remove field (debe estar en el schema y luego borrarlo)
-        // let response = await DailyTask.updateMany({}, {
-        //     $unset: {
-        //      roles: 1
-        //      }
-        //     }, {
-        //     multi: true
-        //    }).exec(function(err, count) {
-        //     console.log(err, count)
-        //    });
-        let response = await DailyTask.find({})
+
+        let response = await Usuario.updateMany({  }, {
+            $unset: {
+             isExpert: 1
+             }
+            }, {
+            multi: true
+           }).exec(function(err, count) {
+            console.log(err, count)
+           });
 
         // console.log(response)
         res.json({response})

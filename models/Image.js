@@ -40,7 +40,7 @@ const ImagesSchema = mongoose.Schema({
     updatedAt: {
         type: String,
         // default: Date.now()
-    }
+    },
     
 })
 

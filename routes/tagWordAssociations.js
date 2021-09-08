@@ -25,4 +25,15 @@ router.delete('/user/:id',
     tagWordAssociationController.eliminarAsociacionesPorUsuario
 )
 
+// Obtener distribución de palabras etiquetadas
+router.get('/distribution',
+    auth,
+    tagWordAssociationController.obtenerDistribucionPalabrasEtiquetadas
+)
+
+// Obtener palabras de cierta etiqueta
+router.get('/category/:category',
+    tagWordAssociationController.palabrasEtiquetadasPorCategoria
+)
+
 module.exports = router;
