@@ -27,6 +27,7 @@ router.delete('/user/:id',
 
 // Obtener distribución de imágenes etiquetadas
 router.get('/distribution',
+    auth,
     tagImageAssociationController.obtenerDistribucionImagenesEtiquetadas
 )
 

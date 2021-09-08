@@ -116,3 +116,128 @@ exports.eliminarAsociacionesPorUsuario = async (req, res) => {
         res.status(400).send('No se pudo obtener las asociaciones de palabras de este usuario')
     }
 }
+
+exports.obtenerDistribucionPalabrasEtiquetadas = async (req, res) => {
+    try {
+        let porcentajeEtiquetas = []
+        porcentajeEtiquetas.push(
+            await TagWordAssociation.aggregate([
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                },
+                {
+                    $group: {
+                        _id:  "$category._id",
+                        category: {$first : "$category.name"},
+                        count: {$sum: 1},
+                    },
+                },
+                {$unwind: "$category"},
+                {$unwind: "$_id"},
+                { "$sort": { "count": -1 } },
+            ])
+        );
+        porcentajeEtiquetas = porcentajeEtiquetas[0]
+        let totalAmount = 0;
+        porcentajeEtiquetas.forEach( data => totalAmount = totalAmount + data.count);
+        porcentajeEtiquetas.push({total: totalAmount})
+        res.json(porcentajeEtiquetas)
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener la distribución de etiquetas en palabras')
+    }
+}
+
+exports.palabrasEtiquetadasPorCategoria = async (req, res) => {
+    try {
+        let palabrasEtiquetadas = await TagWordAssociation.aggregate([
+            {
+                $lookup: {
+                    from: "words",
+                    localField: "word_id",
+                    foreignField: "_id",
+                    as: "word"
+                }
+            },
+            {
+                $lookup: {
+                    from: "categories",
+                    localField: "category_id",
+                    foreignField: "_id",
+                    as: "category"
+                }
+            },
+            {$match: { "category.name": req.params.category } },
+            { $unset: "user_id" },
+            { $unset: "category_id" },
+            { $unset: "word_id" },
+            {$unwind: "$word"},
+            { 
+                $set: {
+                    "word": { "_id": "$word._id"},
+                    "category": "$category.name",
+                }
+            },
+            {$unwind: "$category"},
+            { $unset: "word.points"},
+            { $unset: "word.createdAt"},
+            { $unset: "word.updatedAt"},
+            { $unset: "word.isEnabled" },
+            { $unset: "word.user_id" },
+            { $unset: "word.difficulty" },
+            { $unset: "word.level_id" },
+        ])
+        
+       var distribucionPorPalabra = []
+        palabrasEtiquetadas.forEach( async (word, index) => {
+            let distribucion = await TagWordAssociation.aggregate([
+                {$match: { "word_id": word.word._id } },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                },
+                {
+                    $group: {
+                        _id:  "$category._id",
+                        category: {$first : "$category.name"},
+                        count: {$sum: 1},
+                    },
+                },
+                { $unset: "user_id" },
+                { $unset: "word_id" },
+                { "$sort": { "count": -1 } },
+            ])
+                let impacto = distribucion.filter(element => { return element.category[0] === "Impacto" })
+                let riesgo = distribucion.filter(element => { return element.category[0] === "Riesgo" })
+                let recuperacion = distribucion.filter(element => { return element.category[0] === "Recuperación" })
+                let mitigacion = distribucion.filter(element => { return element.category[0] === "Mitigación" })
+                let combate = distribucion.filter(element => { return element.category[0] === "Combate" })
+                let amenaza = distribucion.filter(element => { return element.category[0] === "Amenaza" })
+                let prevencion = distribucion.filter(element => { return element.category[0] === "Prevención" })
+                if (impacto.length > 0) { word.impacto = impacto[0].count } else { word.impacto = 0 }
+                if (riesgo.length > 0) { word.riesgo = riesgo[0].count } else { word.riesgo = 0}
+                if (recuperacion.length > 0) { word.recuperacion = recuperacion[0].count } else { word.recuperacion = 0}
+                if (mitigacion.length > 0) { word.mitigacion = mitigacion[0].count } else { word.mitigacion = 0}
+                if (combate.length > 0) { word.combate = combate[0].count } else { word.combate = 0}
+                if (amenaza.length > 0) { word.amenaza = amenaza[0].count } else { word.amenaza = 0}
+                if (prevencion.length > 0) { word.prevencion = prevencion[0].count } else { word.prevencion = 0}
+                await distribucionPorPalabra.push(word)
+                const todas = await Promise.all(distribucionPorPalabra)
+                if (todas.length === palabrasEtiquetadas.length){
+                    res.json(distribucionPorPalabra)
+                }
+            })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('Ocurrió un error, no se pudo obtener las palabras de esta categoría')
+    }
+}

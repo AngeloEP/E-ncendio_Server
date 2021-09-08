@@ -1,4 +1,5 @@
 const Usuario = require('../models/Usuario')
+const util = require('util')
 const UserBuyStore = require('../models/UserBuyStore')
 const Word = require('../models/Word')
 const Image = require('../models/Image')
@@ -259,6 +260,7 @@ exports.modificarUsuario = async (req, res) => {
             phone,
             age,
             gender,
+            city,
             frame,
             nickname,
         } = req.body;
@@ -285,6 +287,7 @@ exports.modificarUsuario = async (req, res) => {
         if ( phone != usuarioAntiguo.phone ) nuevoPerfil.score += addPoints; 
         if ( age != usuarioAntiguo.age ) nuevoPerfil.score += addPoints; 
         if ( gender != usuarioAntiguo.gender ) nuevoPerfil.score += addPoints;
+        if ( city != usuarioAntiguo.city ) nuevoPerfil.score += addPoints;
         if ( frame != perfilAntiguo.frame ) nuevoPerfil.score += addPoints;
         if ( nickname != perfilAntiguo.nickname ) nuevoPerfil.score += addPoints;
         
@@ -342,6 +345,7 @@ exports.modificarUsuario = async (req, res) => {
         usuarioNuevo.phone = phone
         usuarioNuevo.age = age
         usuarioNuevo.gender = gender
+        usuarioNuevo.city = city
         
         // Guardar Usuario
         usuarioAntiguo = await Usuario.findOneAndUpdate(
@@ -351,10 +355,12 @@ exports.modificarUsuario = async (req, res) => {
                         );
 
         let perfil = await Profile.findOne({user_id: req.usuario.id})
-        let marco = await UserBuyStore.findOne({user_id: req.usuario.id, name: frame })
         nuevoPerfil = {};
-        nuevoPerfil.frameUsed = marco.name;
-        nuevoPerfil.frameUsedCss = marco.nameCss;
+        if (frame) {
+            let marco = await UserBuyStore.findOne({user_id: req.usuario.id, name: frame })
+            nuevoPerfil.frameUsed = marco.name;
+            nuevoPerfil.frameUsedCss = marco.nameCss;
+        }
         nuevoPerfil.nicknameUsed = nickname;
         nuevoPerfil.editProfileCount = perfil.editProfileCount + 1;
         await Profile.findOneAndUpdate({ _id : perfil._id }, nuevoPerfil, { new: true } )

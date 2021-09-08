@@ -15,19 +15,21 @@ router.post('/',
 
 // *********************************************************
 // modificar colección
-router.get('/modify',
-    imageController.cambiarDailyTasks
-)
 
-// Agregar dailyTask
-router.get('/addDailyTask',
-    imageController.agregarDailyTasks
-)
+// router.get('/modify',
+//     imageController.cambiarDailyTasks
+// )
 
-// Agregar Task
-router.get('/addTask',
-    imageController.agregarTask
-)
+// // Agregar dailyTask
+// router.get('/addDailyTask',
+//     imageController.agregarDailyTasks
+// )
+
+// // Agregar Task
+// router.get('/addTask',
+//     imageController.agregarTask
+// )
+
 // *********************************************************
 
 // Obtiene las imágenes (agregar de cierta liga)

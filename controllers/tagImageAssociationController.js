@@ -194,7 +194,7 @@ exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
             { $unset: "image.level_id" },
         ])
         
-       var nuevo = []
+       var distribucionPorImagen = []
         imagenesEtiquetadas.forEach( async (imagen, index) => {
             let distribucion = await TagImageAssociation.aggregate([
                 {$match: { "image_id": imagen.image._id } },
@@ -231,10 +231,10 @@ exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
                 if (combate.length > 0) { imagen.combate = combate[0].count } else { imagen.combate = 0}
                 if (amenaza.length > 0) { imagen.amenaza = amenaza[0].count } else { imagen.amenaza = 0}
                 if (prevencion.length > 0) { imagen.prevencion = prevencion[0].count } else { imagen.prevencion = 0}
-                await nuevo.push(imagen)
-                const todas = await Promise.all(nuevo)
+                await distribucionPorImagen.push(imagen)
+                const todas = await Promise.all(distribucionPorImagen)
                 if (todas.length === imagenesEtiquetadas.length){
-                    res.json(nuevo)
+                    res.json(distribucionPorImagen)
                 }
             })
     } catch (error) {
