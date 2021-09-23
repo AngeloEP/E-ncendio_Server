@@ -1,17 +1,5 @@
 const mongoose = require('mongoose')
 
-// creando la geolocalización del usuario
-const GeoSchema = mongoose.Schema({
-    type: {
-        type: String,
-        default: "Point"
-    },
-    coordinates: {
-        type: [Number],
-        index: "2dsphere"
-    }
-});
-
 const UsuariosSchema = mongoose.Schema({
     firstname: {
         type: String,
@@ -76,9 +64,10 @@ const UsuariosSchema = mongoose.Schema({
         required: true,
         trim: true
     },
-    geometry: [{
-        type: Number,
-    }],
+
+    // geometry: [{
+    //     type: Number,
+    // }],
     registerAt: {
         type: String,
     }

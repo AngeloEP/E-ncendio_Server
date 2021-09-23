@@ -107,7 +107,7 @@ exports.crearUsuario = async (req, res, next) => {
     }
     
     // Extraer email y password
-    const { email, password } = req.body
+    const { email, password, geometry } = req.body
 
     try {
         // Revisar que el usuario registrado sea único
@@ -154,6 +154,7 @@ exports.crearUsuario = async (req, res, next) => {
             // crear registro de cuando se logeo
             let login = new Log();
             login.user_id = usuario.id;
+            login.geometry = geometry;
             login.loginAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             login.logoutAt = moment().add(1, 'hour').tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             await login.save()

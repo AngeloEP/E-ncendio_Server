@@ -33,7 +33,7 @@ exports.autenticarUsuario = async (req, res) => {
     }
 
     // Extraer el email y password
-    const { email, password } = req.body
+    const { email, password, latitude, longitude } = req.body
 
     try {
         // Revisar que sea un usuario registrado
@@ -63,6 +63,7 @@ exports.autenticarUsuario = async (req, res) => {
             // crear registro de cuando se logeo
             let login = new Log();
             login.user_id = usuario.id;
+            login.geometry = [latitude, longitude];
             login.loginAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             login.logoutAt = moment().add(1, 'hour').tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
             await login.save()

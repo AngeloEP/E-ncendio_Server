@@ -12,7 +12,10 @@ const LoginsSchema = mongoose.Schema({
     logoutAt: {
         type: String,
         // default: Date.now()
-    }
+    },
+    geometry: [{
+        type: Number,
+    }]
     
 })
 
