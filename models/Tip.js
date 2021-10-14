@@ -23,6 +23,10 @@ const TipsSchema = mongoose.Schema({
         required: true,
         trim: true
     },
+    urlFile: {
+        type: String,
+        default: ""
+    },
     createdAt: {
         type: String,
         // default: Date.now()
@@ -32,5 +36,10 @@ const TipsSchema = mongoose.Schema({
         // default: Date.now()
     }
 })
+
+TipsSchema.methods.setImagegUrl = function setImagegUrl(filename) {
+    const { AWS_HOST } = process.env
+    this.urlFile = `${AWS_HOST}/tip_images/${filename}`
+}
 
 module.exports = mongoose.model('Tip', TipsSchema);

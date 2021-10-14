@@ -6,6 +6,16 @@ const CategorySchema = mongoose.Schema({
         required: true,
         unique: true,
         trim: true
+    },
+    isVisible: {
+        type: Boolean,
+        default: false
+    },
+    createdAt: {
+        type: String,
+    },
+    updatedAt: {
+        type: String,
     }
 })
 

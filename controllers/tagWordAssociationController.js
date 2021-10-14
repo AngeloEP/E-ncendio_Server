@@ -62,13 +62,35 @@ exports.crearAsociacionDePalabra = async (req, res) => {
         }
 
         etiquetaExistente = await TagWordAssociation.findOne({ user_id: req.usuario.id, word_id: req.params.word })
+
+        let responseDist = await TagWordAssociation.aggregate([
+            {$match: { "word_id": mongoose.Types.ObjectId(req.params.word) } },
+            {
+                $group: {
+                    _id:  "$category_id",
+                    category:  {$first: "$category_id"},
+                    countWords: {$sum: 1},
+                },
+            },
+        ])
+        let total = 0;
+        let porcentaje = null;
+        let porcentajeEtiqueta = 0;
+        if (responseDist.length != 0) {
+            total = responseDist.map(item => item.countWords).reduce((prev, next) => prev + next);
+            porcentaje = responseDist.find( tag => {return tag.category == req.params.category} );
+        }
+        if (total != 0 && porcentaje) {
+            porcentajeEtiqueta = Math.round((porcentaje.countWords/total)*100);
+        }
+
         if (etiquetaExistente) {
             await TagWordAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, palabraRepetida, { new: true } );
-            res.json({palabraRepetida, reward: recompensa, rewardTasks: recompensaTareas })
+            res.json({palabraRepetida, reward: recompensa, rewardTasks: recompensaTareas, tagDistribution: porcentajeEtiqueta })
         } else {
             await palabraAsociada.save()
     
-            res.json({palabraAsociada, reward: recompensa, rewardTasks: recompensaTareas })
+            res.json({palabraAsociada, reward: recompensa, rewardTasks: recompensaTareas, tagDistribution: porcentajeEtiqueta })
         }
 
     } catch (error) {
@@ -119,6 +141,7 @@ exports.eliminarAsociacionesPorUsuario = async (req, res) => {
 
 exports.obtenerDistribucionPalabrasEtiquetadas = async (req, res) => {
     try {
+        const { cityWords, isFireRelatedWords } = req.body
         let porcentajeEtiquetas = []
         porcentajeEtiquetas.push(
             await TagWordAssociation.aggregate([
@@ -130,6 +153,39 @@ exports.obtenerDistribucionPalabrasEtiquetadas = async (req, res) => {
                         as: "category"
                     }
                 },
+                {
+                    $lookup: {
+                        from: "usuarios",
+                        localField: "user_id",
+                        foreignField: "_id",
+                        as: "user_id"
+                    }
+                },
+                {$unwind: "$user_id"},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ cityWords, "" ] },
+                            { $ne: [ "$user_id.city", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ cityWords, "" ] },
+                            { $eq: [ "$user_id.city", cityWords ] }
+                        ]},
+                    ],
+                }}},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ isFireRelatedWords, "" ] },
+                            { $ne: [ "$user_id.isFireRelated", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ isFireRelatedWords, "" ] },
+                            { $eq: [ "$user_id.isFireRelated", isFireRelatedWords ] }
+                        ]},
+                    ],
+                }}},
                 {
                     $group: {
                         _id:  "$category._id",
@@ -155,6 +211,7 @@ exports.obtenerDistribucionPalabrasEtiquetadas = async (req, res) => {
 
 exports.palabrasEtiquetadasPorCategoria = async (req, res) => {
     try {
+        const { cityWords, isFireRelatedWords } = req.body
         let palabrasEtiquetadas = await TagWordAssociation.aggregate([
             {
                 $lookup: {
@@ -173,6 +230,39 @@ exports.palabrasEtiquetadasPorCategoria = async (req, res) => {
                 }
             },
             {$match: { "category.name": req.params.category } },
+            {
+                $lookup: {
+                    from: "usuarios",
+                    localField: "user_id",
+                    foreignField: "_id",
+                    as: "user_id"
+                }
+            },
+            {$unwind: "$user_id"},
+            { $match: { $expr: {
+                $or: [
+                    { $and: [
+                        { $eq: [ cityWords, "" ] },
+                        { $ne: [ "$user_id.city", null ] }
+                    ]},
+                    { $and: [
+                        { $ne: [ cityWords, "" ] },
+                        { $eq: [ "$user_id.city", cityWords ] }
+                    ]},
+                ],
+            }}},
+            { $match: { $expr: {
+                $or: [
+                    { $and: [
+                        { $eq: [ isFireRelatedWords, "" ] },
+                        { $ne: [ "$user_id.isFireRelated", null ] }
+                    ]},
+                    { $and: [
+                        { $ne: [ isFireRelatedWords, "" ] },
+                        { $eq: [ "$user_id.isFireRelated", isFireRelatedWords ] }
+                    ]},
+                ],
+            }}},
             { $unset: "user_id" },
             { $unset: "category_id" },
             { $unset: "word_id" },
@@ -191,12 +281,52 @@ exports.palabrasEtiquetadasPorCategoria = async (req, res) => {
             { $unset: "word.user_id" },
             { $unset: "word.difficulty" },
             { $unset: "word.level_id" },
+            {
+                $group: {
+                    _id:  "$word._id",
+                    word: {$first : "$word"},
+                    category: {$first : "$category"},
+                },
+            },
         ])
         
        var distribucionPorPalabra = []
         palabrasEtiquetadas.forEach( async (word, index) => {
             let distribucion = await TagWordAssociation.aggregate([
                 {$match: { "word_id": word.word._id } },
+                {
+                    $lookup: {
+                        from: "usuarios",
+                        localField: "user_id",
+                        foreignField: "_id",
+                        as: "user_id"
+                    }
+                },
+                {$unwind: "$user_id"},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ cityWords, "" ] },
+                            { $ne: [ "$user_id.city", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ cityWords, "" ] },
+                            { $eq: [ "$user_id.city", cityWords ] }
+                        ]},
+                    ],
+                }}},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ isFireRelatedWords, "" ] },
+                            { $ne: [ "$user_id.isFireRelated", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ isFireRelatedWords, "" ] },
+                            { $eq: [ "$user_id.isFireRelated", isFireRelatedWords ] }
+                        ]},
+                    ],
+                }}},
                 {
                     $lookup: {
                         from: "categories",

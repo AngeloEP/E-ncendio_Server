@@ -7,6 +7,11 @@ const LeagueSchema = mongoose.Schema({
         trim: true,
         unique: true
     },
+    pointsPreviousLeague: {
+        type: Number,
+        required: true,
+        unique: true
+    },
     pointsNextLeague: {
         type: Number,
         required: true,

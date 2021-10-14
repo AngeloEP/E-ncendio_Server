@@ -129,6 +129,7 @@ exports.guardarImagenesPalabra = async (req, res) => {
         let addPoints = 25;
         let nuevoPerfil = {}
         nuevoPerfil.score = perfilAntiguo.score + addPoints
+        nuevoPerfil.uploadHangmanCount = perfilAntiguo.uploadHangmanCount + 1
 
         if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
             let nuevaLiga = ""

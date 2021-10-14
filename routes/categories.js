@@ -15,10 +15,27 @@ router.post('/',
     categoryController.crearCategoria
 )
 
-// Obtiene las categorías
+// Obtiene todas las categorías
 router.get('/',
     auth,
-    categoryController.obtenerCategorias
+    categoryController.obtenerTodasLasCategorias
+)
+
+// Obtiene todas las categorías VISIBLES
+router.get('/isVisible',
+    auth,
+    categoryController.obtenerCategoriasVisibles
+)
+
+// Modificar categorpia
+router.put('/:id',
+    auth,
+    auth,
+    [
+        check('name', 'El nombre de la categoría es obligatorio').not().isEmpty(),
+        check('isVisible', 'Debes seleccionar si será o no visible la categoría').isBoolean(),
+    ],
+    categoryController.modificarCategoría
 )
 
 module.exports = router;

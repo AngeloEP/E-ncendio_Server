@@ -1,5 +1,7 @@
 const Image = require('../models/Image')
+const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
+const Category = require('../models/Category')
 const League = require('../models/League')
 const DailyTask = require('../models/DailyTask')
 const Task = require('../models/Task')
@@ -98,6 +100,7 @@ exports.guardarImagen = async (req, res) => {
         let nuevoPerfil = {}
         if (ligaAntigua.league === "Plata") addPoints = 30; else if(ligaAntigua.league === "Oro") addPoints = 20; else addPoints = 35;
         nuevoPerfil.score = perfilAntiguo.score + addPoints
+        nuevoPerfil.uploadImageCount = perfilAntiguo.uploadImageCount + 1
 
         if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
             let nuevaLiga = ""
@@ -458,23 +461,27 @@ exports.modificarImagenDesdeAdmin = async (req, res) => {
 exports.cambiarDailyTasks = async (req, res) => {
     try {
         // Add field
-
         // let response = await Usuario.update({ _id: "60b3dcef8fe1f20015a49a91" }, [ {$set : { "city": "" } } ])
-        // let response = await Usuario.updateMany({ }, [ {$set : { "isFireRelated": false} } ])
+        // let response = await Tip.updateMany({ }, [ {$set : { "urlFile": ""} } ])
+        
+        // response = response[0]
+        // let totalAmount = 0;
+        // response.forEach( data => totalAmount = totalAmount + data.count);
+        // response.push({total: totalAmount})
+        // console.log(response)
 
         // Remove field (debe estar en el schema y luego borrarlo)
 
-        let response = await Usuario.updateMany({  }, {
-            $unset: {
-             isExpert: 1
-             }
-            }, {
-            multi: true
-           }).exec(function(err, count) {
-            console.log(err, count)
-           });
+        // let response = await Usuario.updateMany({  }, {
+        //     $unset: {
+        //      isExpert: 1
+        //      }
+        //     }, {
+        //     multi: true
+        //    }).exec(function(err, count) {
+        //     console.log(err, count)
+        //    });
 
-        // console.log(response)
         res.json({response})
     } catch (error) {
         console.log(error)

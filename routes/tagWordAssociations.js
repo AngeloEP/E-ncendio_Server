@@ -26,13 +26,13 @@ router.delete('/user/:id',
 )
 
 // Obtener distribución de palabras etiquetadas
-router.get('/distribution',
+router.post('/distribution',
     auth,
     tagWordAssociationController.obtenerDistribucionPalabrasEtiquetadas
 )
 
 // Obtener palabras de cierta etiqueta
-router.get('/category/:category',
+router.post('/category/:category',
     tagWordAssociationController.palabrasEtiquetadasPorCategoria
 )
 
