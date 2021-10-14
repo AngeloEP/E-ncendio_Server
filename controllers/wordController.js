@@ -53,6 +53,7 @@ exports.guardarPalabra = async (req, res) => {
         let nuevoPerfil = {}
         if (ligaAntigua.league === "Oro") addPoints = 15; else addPoints = 25;
         nuevoPerfil.score = perfilAntiguo.score + addPoints;
+        nuevoPerfil.uploadWordCount = perfilAntiguo.uploadWordCount + 1
 
         if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
             let nuevaLiga = ""

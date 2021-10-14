@@ -15,4 +15,10 @@ router.put('/:id',
     profileController.actualizarPuntuacionYLigaPerfil
 )
 
+// Obtiene la distribucion del uso de cada funcionalidad
+router.post('/funcionalitiesDistribution',
+    auth,
+    profileController.obtenerDistribucionUsoFuncionalidades
+)
+
 module.exports = router;

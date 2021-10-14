@@ -5,7 +5,6 @@ const tipController = require('../controllers/tipController')
 const { check } = require('express-validator')
 const auth = require('../middleware/auth')
 
-
 // Obtiene los Tips (agregar de cierta liga)
 // api/tips
 router.get('/',
@@ -16,43 +15,45 @@ router.get('/',
 // Guardar Tip
 router.post('/',
     auth,
+    tipController.cargarImagenTip,
     [
         check('text', 'El contenido del Tip es obligatorio').not().isEmpty(),
     ],
-    tipController.guardarTip
+    tipController.guardarTip  // AQUI b
 )
 
 // Obtiene los Tips subidos por usuario
 router.get('/user',
     auth,
-    tipController.obtenerTipsPorUsuario
+    tipController.obtenerTipsPorUsuario // AQUI b
 )
 
 // Eliminar un Tip del usuario
 router.delete('/user/:id',
     auth,
-    tipController.eliminarTipPorUsuario
+    tipController.eliminarTipPorUsuario // AQUI b
 )
 
 // Actualizar Tip
 router.put('/user/tip/:id',
     auth,
+    tipController.cargarImagenTip,
     [
         check('text', 'El contenido del Tip es obligatorio').not().isEmpty(),
     ],
-    tipController.modificarTipPorUsuario
+    tipController.modificarTipPorUsuario // AQUI b
 )
 
 // Habilitar o no un Tip
 router.put('/user/tip/isEnabled/:id',
     auth,
-    tipController.habilitarOinhabilitarTipPorUsuario
+    tipController.habilitarOinhabilitarTipPorUsuario // AQUI b
 )
 
 // Eliminar un Tip
 router.delete('/user/tip/:id',
     auth,
-    tipController.eliminarTipPorUsuarioDesdeAdmin
+    tipController.eliminarTipPorUsuarioDesdeAdmin // AQUI b
 )
 
 // Modificar puntos de un Tip
@@ -61,7 +62,7 @@ router.put('/user/tip/points/:id',
     [
         check('points', 'Debes ingresar una cantidad de puntos asociados al Tip').isNumeric(),
     ],
-    tipController.modificarTipDesdeAdmin
+    tipController.modificarTipDesdeAdmin // AQUI b
 )
 
 module.exports = router;

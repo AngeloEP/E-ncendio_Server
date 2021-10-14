@@ -555,6 +555,7 @@ exports.obtenerTipsSubidosPorUsuario = async (req, res) => {
             { $replaceWith: {
                 "_id": "$_id",
                 "Texto" : "$text",
+                "Imagen" : "$urlFile",
                 "Puntos" : "$points",
                 "Habilitada" : "$isEnabled",
                 "Creadoel" : "$createdAt",

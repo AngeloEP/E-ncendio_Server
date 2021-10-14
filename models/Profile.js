@@ -41,6 +41,22 @@ const ProfileSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
+    uploadImageCount: {
+        type: Number,
+        default: 0
+    },
+    uploadWordCount: {
+        type: Number,
+        default: 0
+    },
+    uploadHangmanCount: {
+        type: Number,
+        default: 0
+    },
+    uploadTipCount: {
+        type: Number,
+        default: 0
+    },
     score: {
         type: Number,
         required: true
@@ -60,6 +76,10 @@ const ProfileSchema = mongoose.Schema({
     nicknameUsed: {
         type: String,
         default: ""
+    },
+    dropLeague: {
+        type: Boolean,
+        default: false
     },
 })
 

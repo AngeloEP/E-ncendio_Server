@@ -65,6 +65,7 @@ exports.actualizarPuntuacionYLigaPerfil = async (req, res) => {
             level_word_id,
             level_four_image_id,
             league_id,
+            dropLeague,
             score,
         } = req.body;
         // Comprobar si existe el perfil
@@ -80,7 +81,7 @@ exports.actualizarPuntuacionYLigaPerfil = async (req, res) => {
 
         const nuevoPerfil = {}
         nuevoPerfil.score = score
-        if ( typeof league_id === "string" ) {
+        if ( typeof league_id === "string" && !dropLeague ) {
             let nuevaLiga = ""
             switch (league_id) {
                 case "Bronce":
@@ -98,6 +99,24 @@ exports.actualizarPuntuacionYLigaPerfil = async (req, res) => {
             ligaNueva = await League.findOne({ league: nuevaLiga })
             nuevoPerfil.league_id = ligaNueva._id
         }
+        if ( typeof league_id === "string" && dropLeague ) {
+            let nuevaLiga = ""
+            switch (league_id) {
+                case "Bronce":
+                    nuevaLiga = "Bronce"
+                    break;
+
+                case "Plata":
+                    nuevaLiga = "Bronce"
+                    break;
+            
+                default:
+                    nuevaLiga = "Plata"
+                    break;
+            }
+            ligaNueva = await League.findOne({ league: nuevaLiga })
+            nuevoPerfil.league_id = ligaNueva._id
+        }
 
         // Guardar Perfil
         perfil = await Profile.findOneAndUpdate({ _id : req.params.id }, nuevoPerfil, { new: true } )
@@ -110,5 +129,66 @@ exports.actualizarPuntuacionYLigaPerfil = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo modificar su puntaje')
+    }
+}
+
+exports.obtenerDistribucionUsoFuncionalidades = async (req, res) => {
+    try {
+        const { cityDistributionFuncionalities, isFireRelatedDistributionFuncionalities } = req.body
+        let distribucionFuncionalidades = await Profile.aggregate([
+            {
+                $lookup: {
+                    from: "usuarios",
+                    localField: "user_id",
+                    foreignField: "_id",
+                    as: "user_id"
+                }
+            },
+            {$unwind: "$user_id"},
+            { $match: { $expr: {
+                $or: [
+                    { $and: [
+                        { $eq: [ cityDistributionFuncionalities, "" ] },
+                        { $ne: [ "$user_id.city", null ] }
+                    ]},
+                    { $and: [
+                        { $ne: [ cityDistributionFuncionalities, "" ] },
+                        { $eq: [ "$user_id.city", cityDistributionFuncionalities ] }
+                    ]},
+                ],
+            }}},
+            { $match: { $expr: {
+                $or: [
+                    { $and: [
+                        { $eq: [ isFireRelatedDistributionFuncionalities, "" ] },
+                        { $ne: [ "$user_id.isFireRelated", null ] }
+                    ]},
+                    { $and: [
+                        { $ne: [ isFireRelatedDistributionFuncionalities, "" ] },
+                        { $eq: [ "$user_id.isFireRelated", isFireRelatedDistributionFuncionalities ] }
+                    ]},
+                ],
+            }}},
+            { $group: {
+                _id: null,
+                totalImageTagCount: { $sum: { $add: [ "$imageTagCount" ] } },
+                totalWordTagCount: { $sum: { $add: [ "$wordTagCount" ] } },
+                totalHangmanTagCount: { $sum: { $add: [ "$hangmanTagCount" ] } },
+                totalTipTagCount: { $sum: { $add: [ "$tipViewed" ] } },
+                totalEditProfileCount: { $sum: { $add: [ "$editProfileCount" ] } },
+                totalUploadImageCount: { $sum: { $add: [ "$uploadImageCount" ] } },
+                totalUploadWordCount: { $sum: { $add: [ "$uploadWordCount" ] } },
+                totalUploadHangmanCount: { $sum: { $add: [ "$uploadHangmanCount" ] } },
+                totalUploadTipCount: { $sum: { $add: [ "$uploadTipCount" ] } },
+                total: {$sum: {$add: [
+                    "$imageTagCount", "$wordTagCount", "$hangmanTagCount", "$tipViewed",
+                    "$editProfileCount", "$uploadImageCount", "$uploadWordCount", "$uploadHangmanCount", "$uploadTipCount"
+                ] }},
+            }}
+        ])
+        res.json({ distribucionFuncionalidades })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo la distribución del uso de las funcionalidades')
     }
 }

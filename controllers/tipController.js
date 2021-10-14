@@ -9,9 +9,74 @@ const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 const moment = require('moment-timezone');
 const mongoose = require('mongoose')
+const AWS = require('aws-sdk');
+const S3 = new AWS.S3();
+const multer = require('multer')
+const multerS3 = require('multer-s3')
+const path = require('path')
+
+let fileFilter = function (req, file, cb) {
+    const filetypes = /jpeg|JPEG|jpg|JPG|png|PNG|gif|GIF/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname));
+    if (mimetype && extname) {
+        cb(null, true);
+    } else {
+        cb({
+            success: false,
+            message: 'Tipo de archivo inválido, solo se permiten de tipo: jpeg|jpg|png|gif.'
+        });
+    }
+};
+
+const getUniqFileName = (originalname) => {
+    const name = originalname.split(".")[0];
+    const ext = originalname.split('.')[1];
+    return `${name}.${ext}`;
+}
+
+const obj = multer({
+    limits: {
+        fileSize: 3 * 1024 * 1024
+    },
+    fileFilter: fileFilter,
+    storage: multerS3({
+        s3: S3,
+        bucket: process.env.AWS_BUCKET_NAME,
+        acl: 'public-read',
+        contentType: multerS3.AUTO_CONTENT_TYPE,
+        key: function (req, file, cb) {
+          const fileName = getUniqFileName(file.originalname);
+          const s3_inner_directory = 'tip_images';
+          const finalPath = `${s3_inner_directory}/${fileName}`;
+          
+          file.filename = fileName;
+          
+          cb(null, finalPath );
+        }
+      }),
+});
+const upload = multer(obj).single('image');
+
+exports.cargarImagenTip = async (req, res, next) => {
+    upload(req, res, function (error) {
+        if (error) {
+            console.log(error)
+            if (error.code == 'LIMIT_FILE_SIZE') {
+                return res.status(500).json({ msg: 'Tamaño del archivo demasiado grande, el límite es de 1 MB' })
+            }
+            return res.status(500).json({ msg: error.message});
+        } else {
+            if (!req.file) {
+                console.log("No a seleccionado una imagen para tip....")
+                // return res.status(400).json({ msg: 'No ha adjuntado la imagen del tip' })
+            }
+            next();
+        }
+    })
+}
 
 exports.guardarTip = async (req, res) => {
-    // Revisar si hay errores
     const errores = validationResult(req)
     if ( !errores.isEmpty() ) {
         return res.status(400).json({ errores: errores.array() })
@@ -31,6 +96,11 @@ exports.guardarTip = async (req, res) => {
 
         // Crear el nuevo Tip
         tip = new Tip(req.body)
+
+        if ( req.file ) {
+            const { filename } = req.file
+            tip.setImagegUrl(filename)
+        }
 
         // Encontrar nivel a asociar
         nivel = await Level.findOne({ level: 1 })
@@ -53,6 +123,7 @@ exports.guardarTip = async (req, res) => {
         let nuevoPerfil = {}
         if (ligaAntigua.league === "Bronce") addPoints = 10; else if (ligaAntigua.league === "Plata") addPoints = 7; else addPoints = 5;
         nuevoPerfil.score = perfilAntiguo.score + addPoints;
+        nuevoPerfil.uploadTipCount = perfilAntiguo.uploadTipCount + 1
 
         if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
             let nuevaLiga = ""
@@ -140,6 +211,7 @@ exports.obtenerTipsPorUsuario = async (req, res) => {
             { $replaceWith: {
                 "_id": "$_id",
                 "Texto": "$text",
+                "Imagen": "$urlFile",
                 "Puntos" : "$points",
                 "Estado" : "$isEnabled",
                 "Creado el" : "$createdAt",
@@ -165,9 +237,22 @@ exports.eliminarTipPorUsuario = async (req, res) => {
             return res.status(404).json({ msg: "Este usuario no tiene permisos para eliminar este Tip" });
         }
 
+        let arrayUrl = tip.urlFile.split("/");
+        let filename = arrayUrl.slice(-1)[0];
+
+        const deleteParams = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: "tip_images/" + filename
+        }
+        
+        S3.deleteObject(deleteParams, function(err, data) {
+            if (err) {
+                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen del tip en AWS' })
+            }
+        });
+
         // Eliminar tip
         await Tip.findOneAndRemove({ _id: req.params.id })
-
 
         res.json({ msg: "Tip eliminado correctamente" })
 
@@ -206,6 +291,30 @@ exports.modificarTipPorUsuario = async (req, res) => {
             tipNuevo.isEnabled = true
         } else {
             tipNuevo.isEnabled = false
+        }
+
+        if ( req.file ) {
+            let { filename } = req.file
+
+            arrayNewFilename = filename.split(".")
+            filename = arrayNewFilename[0]
+            
+            if (tipAntiguo.urlFile) {
+                let arrayUrl = tipAntiguo.urlFile.split("/");
+                let filenameDelete = arrayUrl.slice(-1)[0];
+                const deleteParams = {
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: "tip_images/" + filenameDelete
+                }
+                
+                S3.deleteObject(deleteParams, function(err, data) {
+                    if (err) {
+                        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen del tip en AWS' })
+                    }
+                });
+            }
+            tipAntiguo.setImagegUrl(filename+"."+arrayNewFilename.slice(-1)[0])
+            await tipAntiguo.save()
         }
 
         // Guardar Tip modificada
@@ -257,6 +366,7 @@ exports.habilitarOinhabilitarTipPorUsuario = async (req, res) => {
             { $replaceWith: {
                 "_id": "$_id",
                 "Texto": "$text",
+                "Imagen": "$urlFile",
                 "Puntos" : "$points",
                 "Habilitada" : "$isEnabled",
                 "Creadoel" : "$createdAt",
@@ -283,6 +393,20 @@ exports.eliminarTipPorUsuarioDesdeAdmin = async (req, res) => {
         if ( !usuarioModificador.isAdmin ) {
             return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
         }
+
+        let arrayUrl = tip.urlFile.split("/");
+        let filename = arrayUrl.slice(-1)[0];
+
+        const deleteParams = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: "tip_images/" + filename
+        }
+        
+        S3.deleteObject(deleteParams, function(err, data) {
+            if (err) {
+                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la imagen del tip en AWS' })
+            }
+        });
 
         await Tip.findOneAndRemove({ _id: req.params.id })
         await ViewedTipAssociation.deleteMany({ tip_id: req.params.id })
@@ -334,6 +458,7 @@ exports.modificarTipDesdeAdmin = async (req, res) => {
             { $replaceWith: {
                 "_id": "$_id",
                 "Texto": "$text",
+                "Imagen": "$urlFile",
                 "Puntos" : "$points",
                 "Habilitada" : "$isEnabled",
                 "Creadoel" : "$createdAt",

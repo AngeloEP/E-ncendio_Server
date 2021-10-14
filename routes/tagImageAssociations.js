@@ -26,13 +26,13 @@ router.delete('/user/:id',
 )
 
 // Obtener distribución de imágenes etiquetadas
-router.get('/distribution',
+router.post('/distribution',
     auth,
     tagImageAssociationController.obtenerDistribucionImagenesEtiquetadas
 )
 
 // Obtener imágenes de cierta etiqueta
-router.get('/category/:category',
+router.post('/category/:category',
     tagImageAssociationController.imagenesEtiquetadasPorCategoria
 )
 

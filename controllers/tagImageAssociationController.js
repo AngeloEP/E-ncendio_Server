@@ -63,12 +63,34 @@ exports.crearAsociacionDeImagen = async (req, res) => {
         }
 
         etiquetaExistente = await TagImageAssociation.findOne({ user_id: req.usuario.id, image_id: req.params.image })
+
+        let responseDist = await TagImageAssociation.aggregate([
+            {$match: { "image_id": mongoose.Types.ObjectId(req.params.image) } },
+            {
+                $group: {
+                    _id:  "$category_id",
+                    category:  {$first: "$category_id"},
+                    countImages: {$sum: 1},
+                },
+            },
+        ])
+        let total = 0;
+        let porcentaje = null;
+        let porcentajeEtiqueta = 0;
+        if (responseDist.length != 0) {
+            total = responseDist.map(item => item.countImages).reduce((prev, next) => prev + next);
+            porcentaje = responseDist.find( tag => {return tag.category == req.params.category} );
+        }
+        if (total != 0 && porcentaje) {
+            porcentajeEtiqueta = Math.round((porcentaje.countImages/total)*100);
+        }
+
         if (etiquetaExistente) {
             await TagImageAssociation.findOneAndUpdate({ _id : etiquetaExistente._id }, imagenRepetida, { new: true } );
-            res.json({imagenRepetida, reward: recompensa, rewardTasks: recompensaTareas })
+            res.json({imagenRepetida, reward: recompensa, rewardTasks: recompensaTareas, tagDistribution: porcentajeEtiqueta })
         } else {
             await imagenAsociada.save()
-            res.json({imagenAsociada, reward: recompensa, rewardTasks: recompensaTareas })
+            res.json({imagenAsociada, reward: recompensa, rewardTasks: recompensaTareas, tagDistribution: porcentajeEtiqueta })
         }
 
     } catch (error) {
@@ -119,6 +141,7 @@ exports.eliminarAsociacionesPorUsuario = async (req, res) => {
 
 exports.obtenerDistribucionImagenesEtiquetadas = async (req, res) => {
     try {
+        const { cityImages, isFireRelatedImages } = req.body
         let porcentajeEtiquetas = []
         porcentajeEtiquetas.push(
             await TagImageAssociation.aggregate([
@@ -130,6 +153,39 @@ exports.obtenerDistribucionImagenesEtiquetadas = async (req, res) => {
                         as: "category"
                     }
                 },
+                {
+                    $lookup: {
+                        from: "usuarios",
+                        localField: "user_id",
+                        foreignField: "_id",
+                        as: "user_id"
+                    }
+                },
+                {$unwind: "$user_id"},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ cityImages, "" ] },
+                            { $ne: [ "$user_id.city", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ cityImages, "" ] },
+                            { $eq: [ "$user_id.city", cityImages ] }
+                        ]},
+                    ],
+                }}},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ isFireRelatedImages, "" ] },
+                            { $ne: [ "$user_id.isFireRelated", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ isFireRelatedImages, "" ] },
+                            { $eq: [ "$user_id.isFireRelated", isFireRelatedImages ] }
+                        ]},
+                    ],
+                }}},
                 {
                     $group: {
                         _id:  "$category._id",
@@ -155,6 +211,7 @@ exports.obtenerDistribucionImagenesEtiquetadas = async (req, res) => {
 
 exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
     try {
+        const { cityImages, isFireRelatedImages } = req.body
         let imagenesEtiquetadas = await TagImageAssociation.aggregate([
             {
                 $lookup: {
@@ -173,6 +230,39 @@ exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
                 }
             },
             {$match: { "category.name": req.params.category } },
+            {
+                $lookup: {
+                    from: "usuarios",
+                    localField: "user_id",
+                    foreignField: "_id",
+                    as: "user_id"
+                }
+            },
+            {$unwind: "$user_id"},
+            { $match: { $expr: {
+                $or: [
+                    { $and: [
+                        { $eq: [ cityImages, "" ] },
+                        { $ne: [ "$user_id.city", null ] }
+                    ]},
+                    { $and: [
+                        { $ne: [ cityImages, "" ] },
+                        { $eq: [ "$user_id.city", cityImages ] }
+                    ]},
+                ],
+            }}},
+            { $match: { $expr: {
+                $or: [
+                    { $and: [
+                        { $eq: [ isFireRelatedImages, "" ] },
+                        { $ne: [ "$user_id.isFireRelated", null ] }
+                    ]},
+                    { $and: [
+                        { $ne: [ isFireRelatedImages, "" ] },
+                        { $eq: [ "$user_id.isFireRelated", isFireRelatedImages ] }
+                    ]},
+                ],
+            }}},
             { $unset: "user_id" },
             { $unset: "category_id" },
             { $unset: "image_id" },
@@ -192,12 +282,52 @@ exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
             { $unset: "image.user_id" },
             { $unset: "image.difficulty" },
             { $unset: "image.level_id" },
+            {
+                $group: {
+                    _id:  "$image._id",
+                    image: {$first : "$image"},
+                    category: {$first : "$category"},
+                },
+            },
         ])
         
        var distribucionPorImagen = []
         imagenesEtiquetadas.forEach( async (imagen, index) => {
             let distribucion = await TagImageAssociation.aggregate([
                 {$match: { "image_id": imagen.image._id } },
+                {
+                    $lookup: {
+                        from: "usuarios",
+                        localField: "user_id",
+                        foreignField: "_id",
+                        as: "user_id"
+                    }
+                },
+                {$unwind: "$user_id"},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ cityImages, "" ] },
+                            { $ne: [ "$user_id.city", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ cityImages, "" ] },
+                            { $eq: [ "$user_id.city", cityImages ] }
+                        ]},
+                    ],
+                }}},
+                { $match: { $expr: {
+                    $or: [
+                        { $and: [
+                            { $eq: [ isFireRelatedImages, "" ] },
+                            { $ne: [ "$user_id.isFireRelated", null ] }
+                        ]},
+                        { $and: [
+                            { $ne: [ isFireRelatedImages, "" ] },
+                            { $eq: [ "$user_id.isFireRelated", isFireRelatedImages ] }
+                        ]},
+                    ],
+                }}},
                 {
                     $lookup: {
                         from: "categories",
