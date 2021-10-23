@@ -174,15 +174,18 @@ exports.obtenerDistribucionUsoFuncionalidades = async (req, res) => {
                 totalImageTagCount: { $sum: { $add: [ "$imageTagCount" ] } },
                 totalWordTagCount: { $sum: { $add: [ "$wordTagCount" ] } },
                 totalHangmanTagCount: { $sum: { $add: [ "$hangmanTagCount" ] } },
+                totalUniqueSelectionTagCount: { $sum: { $add: [ "$uniqueSelectionTagCount" ] } },
                 totalTipTagCount: { $sum: { $add: [ "$tipViewed" ] } },
                 totalEditProfileCount: { $sum: { $add: [ "$editProfileCount" ] } },
                 totalUploadImageCount: { $sum: { $add: [ "$uploadImageCount" ] } },
                 totalUploadWordCount: { $sum: { $add: [ "$uploadWordCount" ] } },
                 totalUploadHangmanCount: { $sum: { $add: [ "$uploadHangmanCount" ] } },
+                totalUploadUniqueSelectionCount: { $sum: { $add: [ "$uploadUniqueSelectionCount" ] } },
                 totalUploadTipCount: { $sum: { $add: [ "$uploadTipCount" ] } },
                 total: {$sum: {$add: [
-                    "$imageTagCount", "$wordTagCount", "$hangmanTagCount", "$tipViewed",
-                    "$editProfileCount", "$uploadImageCount", "$uploadWordCount", "$uploadHangmanCount", "$uploadTipCount"
+                    "$imageTagCount", "$wordTagCount", "$hangmanTagCount", "$uniqueSelectionTagCount", "$tipViewed",
+                    "$editProfileCount", "$uploadImageCount", "$uploadWordCount", "$uploadHangmanCount", "$uploadUniqueSelectionCount",
+                    "$uploadTipCount",
                 ] }},
             }}
         ])

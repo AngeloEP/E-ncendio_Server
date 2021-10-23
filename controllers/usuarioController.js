@@ -5,6 +5,7 @@ const Word = require('../models/Word')
 const Image = require('../models/Image')
 const Log = require('../models/Log')
 const Hangman = require('../models/Hangman')
+const UniqueSelection = require('../models/UniqueSelection')
 const DailyTask = require('../models/DailyTask')
 const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
@@ -544,6 +545,31 @@ exports.obtenerAhorcadosSubidosPorUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo obtener los ahorcados de este usuario')
+    }
+}
+
+exports.obtenerSeleccionesUnicasSubidasPorUsuario = async (req, res) => {
+    try {
+        let id = mongoose.Types.ObjectId(req.params.id);
+        const seleccionesUnicas = await UniqueSelection.aggregate([
+            { $match: { user_id: id } },
+            { $replaceWith: {
+                "_id": "$_id",
+                "Imagen1": "$imageUrl_1",
+                "Imagen2": "$imageUrl_2",
+                "Imagen3": "$imageUrl_3",
+                "Palabra" : "$keyWord",
+                "Dificultad" : "$difficulty",
+                "Puntos" : "$points",
+                "Habilitada" : "$isEnabled",
+                "Creadoel" : "$createdAt",
+                "Actualizadoel" : "$updatedAt",
+            } },
+        ])
+        res.json({ seleccionesUnicas })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener las selecciones únicas de este usuario')
     }
 }
 

@@ -80,7 +80,7 @@ exports.guardarPalabra = async (req, res) => {
 
         perfilAntiguo = await Profile.findOne({user_id: req.usuario.id})
         let id = mongoose.Types.ObjectId(req.usuario.id);
-        let uploads = await Word.countDocuments({ user_id: id });
+        let uploads = perfilAntiguo.uploadWordCount;
         let recompensa = null
         if ([5,10,15,20,25].includes(uploads)) {
             recompensa = {

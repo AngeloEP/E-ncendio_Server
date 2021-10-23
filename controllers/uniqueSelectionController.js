@@ -1,5 +1,5 @@
-const Hangman = require('../models/Hangman')
-const TagHangmanAssociation = require('../models/TagHangmanAssociation')
+const UniqueSelection = require('../models/UniqueSelection')
+const TagUniqueSelectionAssociation = require('../models/TagUniqueSelectionAssociation')
 const Profile = require('../models/Profile')
 const DailyTask = require('../models/DailyTask')
 const League = require('../models/League')
@@ -7,7 +7,7 @@ const Usuario = require('../models/Usuario')
 const Level = require('../models/Level')
 const { validationResult } = require('express-validator')
 const mongoose = require('mongoose')
-const uploadS3Multiple = require('../libs/storageMultiple')
+const uploadS3MultipleUniqueSelection = require('../libs/storeagMultipleUniqueSelection')
 const moment = require('moment-timezone');
 const AWS = require('aws-sdk');
 
@@ -19,7 +19,7 @@ AWS.config.update({
 const S3 = new AWS.S3();
 
 exports.cargarImagenes = async (req, res, next) => {
-    uploadS3Multiple(req, res, function (error) {
+    uploadS3MultipleUniqueSelection(req, res, function (error) {
         if (error) { //instanceof multer.MulterError
             console.log(error)
             if (error.code == 'LIMIT_FILE_SIZE') {
@@ -51,7 +51,7 @@ exports.cargarImagenes = async (req, res, next) => {
 }
 
 exports.cargarONoImagenes = async (req, res, next) => {
-    uploadS3Multiple(req, res, function (error) {
+    uploadS3MultipleUniqueSelection(req, res, function (error) {
         if (error) { //instanceof multer.MulterError
             console.log(error)
             if (error.code == 'LIMIT_FILE_SIZE') {
@@ -80,56 +80,54 @@ exports.cargarONoImagenes = async (req, res, next) => {
     })
 }
 
-exports.guardarImagenesPalabra = async (req, res) => {
+exports.guardarSeleccionUnica = async (req, res) => {
     try {
         let perfilAntiguo = await Profile.findOne({ user_id: req.usuario.id })
         let ligaAntigua = await League.findOne({ _id: perfilAntiguo.league_id })
 
-        // Crear la nueva imagen
-        let { associatedWord } = req.body
-        hangman = new Hangman(req.body)
+        // Crear la nueva selección única
+        let { keyWord } = req.body
+        uniqueSelection = new UniqueSelection(req.body)
 
         let fieldname1 = req.files[0].originalname 
         let fieldname2 = req.files[1].originalname
         let fieldname3 = req.files[2].originalname
-        let fieldname4 = req.files[3].originalname
-        hangman.setImagesUrls(fieldname1, fieldname2, fieldname3, fieldname4 )
+        uniqueSelection.setImagesUrls(fieldname1, fieldname2, fieldname3 )
         if( !req.files ) {
             return res.status(400).json({ msg: 'No ha adjuntado las imágenes' })
         }
 
-        // Revisar que el ahorcado no exista
-        let existeAhorcado = await Hangman.findOne({ associatedWord })
-        if ( existeAhorcado ) {
-            let existeAhorcadoImage1 = existeAhorcado.imageUrl_1.split("/").slice(-1)[0]
-            let existeAhorcadoImage2 = existeAhorcado.imageUrl_2.split("/").slice(-1)[0]
-            let existeAhorcadoImage3 = existeAhorcado.imageUrl_3.split("/").slice(-1)[0]
-            let existeAhorcadoImage4 = existeAhorcado.imageUrl_4.split("/").slice(-1)[0]
-            if (existeAhorcadoImage1 === fieldname1 && existeAhorcadoImage2 === fieldname2 && existeAhorcadoImage3 === fieldname3 && existeAhorcadoImage4 === fieldname4 ) {
-                return res.status(400).json({ msg: 'Ese contenido(ahorcado), ya existe ' })
+        // Revisar que la selección única no exista
+        let existeSeleccionUnica = await UniqueSelection.findOne({ keyWord })
+        if ( existeSeleccionUnica ) {
+            let existeSeleccionUnicaImage1 = existeSeleccionUnica.imageUrl_1.split("/").slice(-1)[0]
+            let existeSeleccionUnicaImage2 = existeSeleccionUnica.imageUrl_2.split("/").slice(-1)[0]
+            let existeSeleccionUnicaImage3 = existeSeleccionUnica.imageUrl_3.split("/").slice(-1)[0]
+            if (existeSeleccionUnicaImage1 === fieldname1 && existeSeleccionUnicaImage2 === fieldname2 && existeSeleccionUnicaImage3 === fieldname3 ) {
+                return res.status(400).json({ msg: 'Ese contenido, ya existe ' })
             }
         }
         
         // Encontrar nivel a asociar
         nivel = await Level.findOne({ level: 1 })
 
-        // Guardar al Nivel al que pertenece el ahorcado
-        hangman.level_id = nivel._id;
-        hangman.user_id = req.usuario.id;
+        // Guardar al Nivel al que pertenece la selección única
+        uniqueSelection.level_id = nivel._id;
+        uniqueSelection.user_id = req.usuario.id;
 
-        hangman.createdAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
-        hangman.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
+        uniqueSelection.createdAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
+        uniqueSelection.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         let usuario = await Usuario.findOne({ "_id": req.usuario.id })
         if (usuario.isAdmin) {
-            hangman.isEnabled = true
+            uniqueSelection.isEnabled = true
         } else {
-            hangman.isEnabled = false
+            uniqueSelection.isEnabled = false
         }
 
         let addPoints = 25;
         let nuevoPerfil = {}
         nuevoPerfil.score = perfilAntiguo.score + addPoints
-        nuevoPerfil.uploadHangmanCount = perfilAntiguo.uploadHangmanCount + 1
+        nuevoPerfil.uploadUniqueSelectionCount = perfilAntiguo.uploadUniqueSelectionCount + 1
 
         if ( nuevoPerfil.score >= ligaAntigua.pointsNextLeague ) {
             let nuevaLiga = ""
@@ -152,15 +150,15 @@ exports.guardarImagenesPalabra = async (req, res) => {
 
         await Profile.findOneAndUpdate({ _id : perfilAntiguo._id }, nuevoPerfil, { new: true } );
 
-        await hangman.save()
+        await uniqueSelection.save()
 
         perfilAntiguo = await Profile.findOne({user_id: req.usuario.id})
         let id = mongoose.Types.ObjectId(req.usuario.id);
-        let uploads = perfilAntiguo.uploadHangmanCount;
+        let uploads = perfilAntiguo.uploadUniqueSelectionCount;
         let recompensa = null
         if ([5,10,15,20,25].includes(uploads)) {
             recompensa = {
-                msg: "Por haber aportado ".concat(uploads).concat(" veces contenido para los ahorcados al sitio, obtuviste "),
+                msg: "Por haber aportado ".concat(uploads).concat(" veces contenido para las selecciones únicas al sitio, obtuviste "),
                 count: uploads,
                 firePoints: uploads
             }
@@ -172,7 +170,7 @@ exports.guardarImagenesPalabra = async (req, res) => {
 
         let recompensaTareas = null
         let nuevaTarea = {}
-        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Hangman", mode: "uploads" })
+        let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "UniqueSelection", mode: "uploads" })
         if (tareas.length > 0) {
             tareas.forEach( async (tareita) => {
                 nuevaTarea.newCount = tareita.newCount + 1;
@@ -191,37 +189,36 @@ exports.guardarImagenesPalabra = async (req, res) => {
             })
         }
 
-        res.json({hangman, reward: recompensa, rewardTasks: recompensaTareas })
+        res.json({uniqueSelection, reward: recompensa, rewardTasks: recompensaTareas })
 
     } catch (error) {
         console.log(error)
-        res.status(400).send({ msg: 'Hubo un error al tratar de guardar las imágenes y su palabra'})
+        res.status(400).send({ msg: 'Hubo un error al tratar de guardar la selección única'})
     }
 }
 
-exports.obtenerImagenesPalabra = async (req, res) => {
+exports.obtenerSeleccionesUnicas = async (req, res) => {
     try {
-        let ahorcados = await Hangman.find({ isEnabled: true })
-        ahorcados = ahorcados.sort(function() {return Math.random() - 0.5});
-        res.json({ ahorcados })
+        let seleccionesUnicas = await UniqueSelection.find({ isEnabled: true })
+        seleccionesUnicas = seleccionesUnicas.sort(function() {return Math.random() - 0.5});
+        res.json({ seleccionesUnicas })
     } catch (error) {
         console.log(error)
-        res.status(500).json({ msg: 'Hubo un error al tratar de obtener los ahorcados' })
+        res.status(500).json({ msg: 'Hubo un error al tratar de obtener las selecciones únicas' })
     }
 }
 
-exports.obtenerAhorcadosPorUsuario = async (req, res) => {
+exports.obtenerSeleccionesUnicasPorUsuario = async (req, res) => {
     try {
         let id = mongoose.Types.ObjectId(req.usuario.id);
-        const ahorcados = await Hangman.aggregate([
+        const seleccionesUnicas = await UniqueSelection.aggregate([
             { $match: { user_id: id } },
             { $replaceWith: {
                 "_id": "$_id",
                 "Imagen1": "$imageUrl_1",
                 "Imagen2": "$imageUrl_2",
                 "Imagen3": "$imageUrl_3",
-                "Imagen4": "$imageUrl_4",
-                "Palabra" : "$associatedWord",
+                "Palabra" : "$keyWord",
                 "Dificultad" : "$difficulty",
                 "Puntos" : "$points",
                 "Estado" : "$isEnabled",
@@ -229,46 +226,42 @@ exports.obtenerAhorcadosPorUsuario = async (req, res) => {
                 "Actualizado el" : "$updatedAt",
             } },
           ])
-        res.json({ ahorcados })
+        res.json({ seleccionesUnicas })
     } catch (error) {
         console.log(error)
-        res.status(400).json({ msg: 'Hubo un error al tratar de obtener los ahorcados del usuario' })
+        res.status(400).json({ msg: 'Hubo un error al tratar de obtener las asociaciones únicas del usuario' })
     }
 }
 
-exports.eliminarImagenesPalabraPorUsuario = async (req, res) => {
+exports.eliminarSeleccionUnicaPorUsuario = async (req, res) => {
     try {
-        let ahorcado = await Hangman.findById(req.params.id);
+        let seleccionUnica = await UniqueSelection.findById(req.params.id);
         
-        if (!ahorcado) {
+        if (!seleccionUnica) {
             return res.status(404).json({ msg: "No existe ese contenido" });
         }
 
-        if (req.usuario.id != ahorcado.user_id) {
+        if (req.usuario.id != seleccionUnica.user_id) {
             return res.status(404).json({ msg: "Este usuario no tiene permisos para eliminar este contenido" });
         }
         
-        let filename1 = (ahorcado.imageUrl_1.split("/")).slice(-1)[0];
-        let filename2 = (ahorcado.imageUrl_2.split("/")).slice(-1)[0];
-        let filename3 = (ahorcado.imageUrl_3.split("/")).slice(-1)[0];
-        let filename4 = (ahorcado.imageUrl_4.split("/")).slice(-1)[0];
+        let filename1 = (seleccionUnica.imageUrl_1.split("/")).slice(-1)[0];
+        let filename2 = (seleccionUnica.imageUrl_2.split("/")).slice(-1)[0];
+        let filename3 = (seleccionUnica.imageUrl_3.split("/")).slice(-1)[0];
 
         const deleteParams = {
             Bucket: process.env.AWS_BUCKET_NAME,
             Delete: {
                 Objects: [
                     {
-                        Key: "hangmans/" + filename1
+                        Key: "unique_selection_images/" + filename1
                     },
                     {
-                        Key: "hangmans/" + filename2
+                        Key: "unique_selection_images/" + filename2
                     },
                     {
-                        Key: "hangmans/" + filename3
+                        Key: "unique_selection_images/" + filename3
                     },
-                    {
-                        Key: "hangmans/" + filename4
-                    }
                 ],
                 Quiet: false
             }
@@ -276,54 +269,51 @@ exports.eliminarImagenesPalabraPorUsuario = async (req, res) => {
         
         S3.deleteObjects(deleteParams, function(err, data) {
             if (err) {
-                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar el ahorcado en AWS' })
+                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la selección única en AWS' })
             }
-            // console.log("Se eliminaron las imágenes en AWS!")
         });
         
-        // Eliminar ahorcado de la BD
-        await Hangman.findOneAndRemove({ _id: req.params.id })
+        // Eliminar selección única de la BD
+        await UniqueSelection.findOneAndRemove({ _id: req.params.id })
 
 
-        res.json({ msg: "Ahorcado eliminada correctamente" })
+        res.json({ msg: "Selección única eliminada correctamente" })
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar el ahorcado' })
+        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la selección única' })
     }
 }
 
-exports.modificarAhorcadoPorUsuario = async (req, res) => {
+exports.modificarSeleccionUnicaPorUsuario = async (req, res) => {
     try {
-        // Comprobar si existe el ahorcado
-        let ahorcadoAntiguo = await Hangman.findById(req.params.id)
+        // Comprobar si existe la selección única
+        let seleccionUnicaAntigua = await UniqueSelection.findById(req.params.id)
 
-        if (!ahorcadoAntiguo) {
+        if (!seleccionUnicaAntigua) {
             return res.status(404).json({ msg: "No existe ese contenido" })
         }
-        if ( ahorcadoAntiguo.user_id.toString() !== req.usuario.id ) {
+        if ( seleccionUnicaAntigua.user_id.toString() !== req.usuario.id ) {
             return res.status(401).json({ msg: "No Autorizado, no puede editar el contenido de este Usuario" })
         }
-        let { associatedWord } = req.body
+        let { keyWord } = req.body
 
-        let ahorcadoNuevo = {}
-        ahorcadoNuevo.associatedWord = associatedWord;
+        let seleccionUnicaNueva = {}
+        seleccionUnicaNueva.keyWord = keyWord;
         
         if (req.files.length != 0) {
-            // Revisar que el nombre del ahorcado no exista
-            let existeAhorcado = await Hangman.findOne({ associatedWord })
-            let existeAhorcadoImage1, existeAhorcadoImage2, existeAhorcadoImage3, existeAhorcadoImage4;
+            // Revisar que el nombre de la selección única exista
+            let existeSeleccionUnica = await UniqueSelection.findOne({ keyWord })
+            let existeSeleccionUnicaImage1, existeSeleccionUnicaImage2, existeSeleccionUnicaImage3;
             let fieldname1 = req.files[0].originalname 
             let fieldname2 = req.files[1].originalname
             let fieldname3 = req.files[2].originalname
-            let fieldname4 = req.files[3].originalname
-            if ( existeAhorcado ) {
-                existeAhorcadoImage1 = existeAhorcado.imageUrl_1.split("/").slice(-1)[0]
-                existeAhorcadoImage2 = existeAhorcado.imageUrl_2.split("/").slice(-1)[0]
-                existeAhorcadoImage3 = existeAhorcado.imageUrl_3.split("/").slice(-1)[0]
-                existeAhorcadoImage4 = existeAhorcado.imageUrl_4.split("/").slice(-1)[0]
-                if (existeAhorcadoImage1 === fieldname1 && existeAhorcadoImage2 === fieldname2 && existeAhorcadoImage3 === fieldname3 && existeAhorcadoImage4 === fieldname4 ) {
-                    return res.status(400).json({ msg: 'Ese contenido(ahorcado), ya existe ' })
+            if ( existeSeleccionUnica ) {
+                existeSeleccionUnicaImage1 = existeSeleccionUnica.imageUrl_1.split("/").slice(-1)[0]
+                existeSeleccionUnicaImage2 = existeSeleccionUnica.imageUrl_2.split("/").slice(-1)[0]
+                existeSeleccionUnicaImage3 = existeSeleccionUnica.imageUrl_3.split("/").slice(-1)[0]
+                if (existeSeleccionUnicaImage1 === fieldname1 && existeSeleccionUnicaImage2 === fieldname2 && existeSeleccionUnicaImage3 === fieldname3 ) {
+                    return res.status(400).json({ msg: 'Ese contenido, ya existe ' })
                 }
             }
 
@@ -332,17 +322,14 @@ exports.modificarAhorcadoPorUsuario = async (req, res) => {
                 Delete: {
                     Objects: [
                         {
-                            Key: "hangmans/" + existeAhorcadoImage1
+                            Key: "unique_selection_images/" + existeSeleccionUnicaImage1
                         },
                         {
-                            Key: "hangmans/" + existeAhorcadoImage2
+                            Key: "unique_selection_images/" + existeSeleccionUnicaImage2
                         },
                         {
-                            Key: "hangmans/" + existeAhorcadoImage3
+                            Key: "unique_selection_images/" + existeSeleccionUnicaImage3
                         },
-                        {
-                            Key: "hangmans/" + existeAhorcadoImage4
-                        }
                     ],
                     Quiet: false
                 }
@@ -350,33 +337,32 @@ exports.modificarAhorcadoPorUsuario = async (req, res) => {
             
             S3.deleteObjects(deleteParams, function(err, data) {
                 if (err) {
-                    res.status(500).json({ msg: 'Hubo un error al tratar de eliminar el ahorcado en AWS' })
+                    res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la selección única en AWS' })
                 }
-                // console.log("Se eliminaron las imágenes en AWS!")
             });
 
-            ahorcadoAntiguo.setImagesUrls(fieldname1, fieldname2, fieldname3, fieldname4 )
-            await ahorcadoAntiguo.save()
+            seleccionUnicaAntigua.setImagesUrls(fieldname1, fieldname2, fieldname3)
+            await seleccionUnicaAntigua.save()
         }
 
         let usuario = await Usuario.findOne({ "_id": req.usuario.id })
         if (usuario.isAdmin) {
-            ahorcadoNuevo.isEnabled = true
+            seleccionUnicaNueva.isEnabled = true
         } else {
-            ahorcadoNuevo.isEnabled = false
+            seleccionUnicaNueva.isEnabled = false
         }
 
-        // Guardar ahorcado modificado
-        ahorcadoAntiguo = await Hangman.findOneAndUpdate(
+        // Guardar selección única modificada
+        seleccionUnicaAntigua = await UniqueSelection.findOneAndUpdate(
                                 { _id : req.params.id },
-                                ahorcadoNuevo,
+                                seleccionUnicaNueva,
                                 { new: true }
                             );
 
         
-        await ahorcadoAntiguo.save()
+        await seleccionUnicaAntigua.save()
 
-        res.json({ ahorcadoAntiguo })
+        res.json({ seleccionUnicaAntigua })
 
     } catch (error) {
         console.log(error)
@@ -384,41 +370,40 @@ exports.modificarAhorcadoPorUsuario = async (req, res) => {
     }
 }
 
-exports.habilitarOinhabilitarAhorcadoPorUsuario = async (req, res) => {
+exports.habilitarOinhabilitarSeleccionUnicaPorUsuario = async (req, res) => {
     try {
-        // Comprobar si existe el ahorcado
-        let ahorcadoAntiguo = await Hangman.findById(req.params.id)
+        // Comprobar si existe la selección única
+        let seleccionUnicaAntigua = await UniqueSelection.findById(req.params.id)
 
-        if (!ahorcadoAntiguo) {
-            return res.status(404).json({ msg: "No existe este ahorcado" })
+        if (!seleccionUnicaAntigua) {
+            return res.status(404).json({ msg: "No existe esta selección única" })
         }
         let usuarioModificador = await Usuario.findById(req.usuario.id)
         if ( !usuarioModificador.isAdmin ) {
             return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
         }
 
-        let ahorcadoNuevo = {}
-        ahorcadoNuevo.isEnabled = !ahorcadoAntiguo.isEnabled
+        let seleccionUnicaNueva = {}
+        seleccionUnicaNueva.isEnabled = !seleccionUnicaAntigua.isEnabled
 
-        // Guardar ahorcado modificada
-        ahorcadoAntiguo = await Hangman.findOneAndUpdate(
+        // Guardar selección única modificada
+        seleccionUnicaAntigua = await UniqueSelection.findOneAndUpdate(
                         { _id : req.params.id },
-                        ahorcadoNuevo,
+                        seleccionUnicaNueva,
                         { new: true }
                         );
 
         
-        await ahorcadoAntiguo.save()
+        await seleccionUnicaAntigua.save()
 
-        ahorcadoAntiguo = await Hangman.aggregate([
-            { $match: { _id: ahorcadoAntiguo._id } },
+        seleccionUnicaAntigua = await UniqueSelection.aggregate([
+            { $match: { _id: seleccionUnicaAntigua._id } },
             { $replaceWith: {
                 "_id": "$_id",
                 "Imagen1": "$imageUrl_1",
                 "Imagen2": "$imageUrl_2",
                 "Imagen3": "$imageUrl_3",
-                "Imagen4": "$imageUrl_4",
-                "Palabra" : "$associatedWord",
+                "Palabra" : "$keyWord",
                 "Dificultad" : "$difficulty",
                 "Puntos" : "$points",
                 "Habilitada" : "$isEnabled",
@@ -427,19 +412,19 @@ exports.habilitarOinhabilitarAhorcadoPorUsuario = async (req, res) => {
             } },
         ])
 
-        res.json({ ahorcadoAntiguo })
+        res.json({ seleccionUnicaAntigua })
         
     } catch (error) {
         console.log(error)
-        res.status(400).send('No se pudo habilitar/inhabilitar el ahorcado') 
+        res.status(400).send('No se pudo habilitar/inhabilitar la selección única') 
     }
 }
 
-exports.eliminarAhorcadoPorUsuarioDesdeAdmin = async (req, res) => {
+exports.eliminarSeleccionUnicaPorUsuarioDesdeAdmin = async (req, res) => {
     try {
-        let ahorcado = await Hangman.findById(req.params.id);        
-        if (!ahorcado) {
-            return res.status(404).json({ msg: "No existe el Ahorcado" });
+        let seleccionUnica = await UniqueSelection.findById(req.params.id);        
+        if (!seleccionUnica) {
+            return res.status(404).json({ msg: "No existe la selección única" });
         }
 
         let usuarioModificador = await Usuario.findById(req.usuario.id)
@@ -447,27 +432,23 @@ exports.eliminarAhorcadoPorUsuarioDesdeAdmin = async (req, res) => {
             return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
         }
 
-        let filename1 = (ahorcado.imageUrl_1.split("/")).slice(-1)[0];
-        let filename2 = (ahorcado.imageUrl_2.split("/")).slice(-1)[0];
-        let filename3 = (ahorcado.imageUrl_3.split("/")).slice(-1)[0];
-        let filename4 = (ahorcado.imageUrl_4.split("/")).slice(-1)[0];
+        let filename1 = (seleccionUnica.imageUrl_1.split("/")).slice(-1)[0];
+        let filename2 = (seleccionUnica.imageUrl_2.split("/")).slice(-1)[0];
+        let filename3 = (seleccionUnica.imageUrl_3.split("/")).slice(-1)[0];
 
         const deleteParams = {
             Bucket: process.env.AWS_BUCKET_NAME,
             Delete: {
                 Objects: [
                     {
-                        Key: "hangmans/" + filename1
+                        Key: "unique_selection_images/" + filename1
                     },
                     {
-                        Key: "hangmans/" + filename2
+                        Key: "unique_selection_images/" + filename2
                     },
                     {
-                        Key: "hangmans/" + filename3
+                        Key: "unique_selection_images/" + filename3
                     },
-                    {
-                        Key: "hangmans/" + filename4
-                    }
                 ],
                 Quiet: false
             }
@@ -475,22 +456,22 @@ exports.eliminarAhorcadoPorUsuarioDesdeAdmin = async (req, res) => {
         
         S3.deleteObjects(deleteParams, function(err, data) {
             if (err) {
-                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar el ahorcado en AWS' })
+                res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la selección única en AWS' })
             }
         });
 
-        await Hangman.findOneAndRemove({ _id: req.params.id })
-        await TagHangmanAssociation.deleteMany({ hangman_id: req.params.id })
+        await UniqueSelection.findOneAndRemove({ _id: req.params.id })
+        await TagUniqueSelectionAssociation.deleteMany({ uniqueSelection_id: req.params.id })
 
-        res.json({ msg: "Ahorcado eliminada correctamente" })
+        res.json({ msg: "Selección única eliminada correctamente" })
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar el Ahorcado' })
+        res.status(500).json({ msg: 'Hubo un error al tratar de eliminar la Selección única' })
     }
 }
 
-exports.modificarAhorcadoDesdeAdmin = async (req, res) => {
+exports.modificarSeleccionUnicaDesdeAdmin = async (req, res) => {
     // Revisar si hay errores
     const errores = validationResult(req)
     if ( !errores.isEmpty() ) {
@@ -499,44 +480,43 @@ exports.modificarAhorcadoDesdeAdmin = async (req, res) => {
 
     try {
         const {
-            associatedWord,
+            keyWord,
             difficulty,
             points,
         } = req.body;
-        // Comprobar si existe el Ahorcado
-        let ahorcadoAntiguo = await Hangman.findById(req.params.id)
+        // Comprobar si existe la selección única
+        let seleccionUnicaAntigua = await UniqueSelection.findById(req.params.id)
 
-        if (!ahorcadoAntiguo) {
-            return res.status(404).json({ msg: "No existe ese Ahorcado" })
+        if (!seleccionUnicaAntigua) {
+            return res.status(404).json({ msg: "No existe esa selección única" })
         }
         let usuarioModificador = await Usuario.findById(req.usuario.id)
         if ( !usuarioModificador.isAdmin ) {
             return res.status(401).json({ msg: "No Autorizado, debe ser un usuario administrador" })
         }
  
-        let ahorcadoNuevo = {}
-        ahorcadoNuevo.associatedWord = associatedWord
-        ahorcadoNuevo.difficulty = difficulty
-        ahorcadoNuevo.points = points
+        let seleccionUnicaNueva = {}
+        seleccionUnicaNueva.keyWord = keyWord
+        seleccionUnicaNueva.difficulty = difficulty
+        seleccionUnicaNueva.points = points
 
-        // Guardar Ahorcado modificada
-        ahorcadoAntiguo = await Hangman.findOneAndUpdate(
+        // Guardar selección única modificada
+        seleccionUnicaAntigua = await UniqueSelection.findOneAndUpdate(
                         { _id : req.params.id },
-                        ahorcadoNuevo,
+                        seleccionUnicaNueva,
                         { new: true }
                         );
 
-        await ahorcadoAntiguo.save()
+        await seleccionUnicaAntigua.save()
 
-        ahorcadoNuevo = await Hangman.aggregate([
-            { $match: { _id: ahorcadoAntiguo._id } },
+        seleccionUnicaNueva = await UniqueSelection.aggregate([
+            { $match: { _id: seleccionUnicaAntigua._id } },
             { $replaceWith: {
                 "_id": "$_id",
                 "Imagen1": "$imageUrl_1",
                 "Imagen2": "$imageUrl_2",
                 "Imagen3": "$imageUrl_3",
-                "Imagen4": "$imageUrl_4",
-                "Palabra" : "$associatedWord",
+                "Palabra" : "$keyWord",
                 "Dificultad" : "$difficulty",
                 "Puntos" : "$points",
                 "Habilitada" : "$isEnabled",
@@ -545,10 +525,10 @@ exports.modificarAhorcadoDesdeAdmin = async (req, res) => {
             } },
         ])
 
-        res.json({ ahorcadoNuevo })
+        res.json({ seleccionUnicaNueva })
 
     } catch (error) {
         console.log(error)
-        res.status(400).send('No se pudo modificar el Ahorcado seleccionada')
+        res.status(400).send('No se pudo modificar la selección única seleccionada')
     }
 }

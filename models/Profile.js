@@ -33,6 +33,10 @@ const ProfileSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
+    uniqueSelectionTagCount: {
+        type: Number,
+        default: 0
+    },
     tipViewed: {
         type: Number,
         default: 0
@@ -50,6 +54,10 @@ const ProfileSchema = mongoose.Schema({
         default: 0
     },
     uploadHangmanCount: {
+        type: Number,
+        default: 0
+    },
+    uploadUniqueSelectionCount: {
         type: Number,
         default: 0
     },

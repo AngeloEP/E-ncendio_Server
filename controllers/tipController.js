@@ -150,7 +150,7 @@ exports.guardarTip = async (req, res) => {
 
         perfilAntiguo = await Profile.findOne({user_id: req.usuario.id})
         let id = mongoose.Types.ObjectId(req.usuario.id);
-        let uploads = await Tip.countDocuments({ user_id: id });
+        let uploads = perfilAntiguo.uploadTipCount;
         let recompensa = null
         if ([5,10,15,20,25].includes(uploads)) {
             recompensa = {

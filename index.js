@@ -45,6 +45,11 @@ cron.schedule('0 0 * * *', function() {
     DeliverDailyRewards.deliver();
 });
 
+cron.schedule('* * * * * *', function() {
+    console.log('You will see this message every second');
+    // ENTER YOUR TASK HERE
+});
+
 // Importar rutas para los usuarios
 app.use('/api/usuarios', require('./routes/usuarios'))
 
@@ -56,9 +61,6 @@ app.use('/api/stores', require('./routes/stores'))
 
 // Importar rutas para la compra de cosas en tienda
 app.use('/api/userBuyStores', require('./routes/userBuyStores'))
-
-// Importar rutas para las 4 imágenes y su palabra
-app.use('/api/hangmans', require('./routes/hangmans'))
 
 // Importar rutas para autentificaciones
 app.use('/api/auth', require('./routes/auth'))
@@ -81,6 +83,12 @@ app.use('/api/words', require('./routes/words'))
 // Importar rutas para las imágenes
 app.use('/api/images', require('./routes/images'))
 
+// Importar rutas para las 4 imágenes y su palabra
+app.use('/api/hangmans', require('./routes/hangmans'))
+
+// Importar rutas para las selecciones únicas
+app.use('/api/uniqueSelections', require('./routes/uniqueSelections'))
+
 // Importar rutas para los tips del sitio
 app.use('/api/tips', require('./routes/tips'))
 
@@ -92,6 +100,9 @@ app.use('/api/tag-words', require('./routes/tagWordAssociations'))
 
 // Importar rutas para las asociaciones de ahorcados
 app.use('/api/tag-hangmans', require('./routes/tagHangmanAssociations'))
+
+// Importar rutas para las asociaciones de selecciones únicas
+app.use('/api/tag-uniqueSelections', require('./routes/tagUniqueSelectionAssociations'))
 
 // Importar rutas para las asociaciones de Tips
 app.use('/api/view-tips', require('./routes/viewedTipAssociations'))
