@@ -12,4 +12,14 @@ router.get('/',
     dailyTasksController.obtenerTareasUsuario
 )
 
+// crear nuevas tareas a los usuarios
+router.get('/newTasks',
+    dailyTasksController.crearNuevasTareas
+)
+
+// Entregar recompensas a los mejores participantes
+router.get('/rewards',
+    dailyTasksController.entregarRecompensasMejoresParticipantes
+)
+
 module.exports = router;
