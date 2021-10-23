@@ -45,10 +45,10 @@ cron.schedule('0 0 * * *', function() {
     DeliverDailyRewards.deliver();
 });
 
-cron.schedule('* * * * * *', function() {
-    console.log('You will see this message every second');
-    // ENTER YOUR TASK HERE
-});
+// cron.schedule('* * * * * *', function() {
+//     console.log('You will see this message every second');
+//     // ENTER YOUR TASK HERE
+// });
 
 // Importar rutas para los usuarios
 app.use('/api/usuarios', require('./routes/usuarios'))
