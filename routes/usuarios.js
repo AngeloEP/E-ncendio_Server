@@ -86,6 +86,11 @@ router.get('/:id/hangmans',
     usuarioController.obtenerAhorcadosSubidosPorUsuario
 )
 
+router.get('/:id/uniqueSelections',
+    auth,
+    usuarioController.obtenerSeleccionesUnicasSubidasPorUsuario
+)
+
 router.get('/:id/tips',
     auth,
     usuarioController.obtenerTipsSubidosPorUsuario

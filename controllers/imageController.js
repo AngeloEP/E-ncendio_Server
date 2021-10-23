@@ -127,7 +127,7 @@ exports.guardarImagen = async (req, res) => {
 
         perfilAntiguo = await Profile.findOne({user_id: req.usuario.id})
         let id = mongoose.Types.ObjectId(req.usuario.id);
-        let uploads = await Image.countDocuments({ user_id: id });
+        let uploads = perfilAntiguo.uploadImageCount;
         let recompensa = null
         console.log(uploads)
         if ([5,10,15,20,25].includes(uploads)) {
@@ -462,7 +462,7 @@ exports.cambiarDailyTasks = async (req, res) => {
     try {
         // Add field
         // let response = await Usuario.update({ _id: "60b3dcef8fe1f20015a49a91" }, [ {$set : { "city": "" } } ])
-        // let response = await Tip.updateMany({ }, [ {$set : { "urlFile": ""} } ])
+        // let response = await Profile.updateMany({ }, [ {$set : { "uploadUniqueSelectionCount": 0} } ])
         
         // response = response[0]
         // let totalAmount = 0;
@@ -544,10 +544,10 @@ exports.agregarTask = async (req, res) => {
         // 602490f8ad44372750035c19  Bronce
         // 602490ffad44372750035c1a  Plata
         // 60249105ad44372750035c1b  Oro
-        task.message = "Subir 3 tips a E-ncendio.";
-        task.type = "Tip";
-        task.mode = "uploads";
-        task.total = 3;
+        task.message = "Jugar 7 veces Selección Única.";
+        task.type = "UniqueSelection";
+        task.mode = "counts";
+        task.total = 7;
         await task.save();
 
         console.log("Tarea agregada")
