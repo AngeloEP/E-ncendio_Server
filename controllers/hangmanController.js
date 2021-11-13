@@ -172,6 +172,7 @@ exports.guardarImagenesPalabra = async (req, res) => {
 
         let recompensaTareas = null
         let nuevaTarea = {}
+        let perfil = await Profile.findOne({user_id: req.usuario.id})
         let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Hangman", mode: "uploads" })
         if (tareas.length > 0) {
             tareas.forEach( async (tareita) => {

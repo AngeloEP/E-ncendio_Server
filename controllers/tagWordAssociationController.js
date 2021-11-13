@@ -289,7 +289,7 @@ exports.palabrasEtiquetadasPorCategoria = async (req, res) => {
                 },
             },
         ])
-        
+        let categorias = await Category.find({})
        var distribucionPorPalabra = []
         palabrasEtiquetadas.forEach( async (word, index) => {
             let distribucion = await TagWordAssociation.aggregate([
@@ -346,20 +346,15 @@ exports.palabrasEtiquetadasPorCategoria = async (req, res) => {
                 { $unset: "word_id" },
                 { "$sort": { "count": -1 } },
             ])
-                let impacto = distribucion.filter(element => { return element.category[0] === "Impacto" })
-                let riesgo = distribucion.filter(element => { return element.category[0] === "Riesgo" })
-                let recuperacion = distribucion.filter(element => { return element.category[0] === "Recuperación" })
-                let mitigacion = distribucion.filter(element => { return element.category[0] === "Mitigación" })
-                let combate = distribucion.filter(element => { return element.category[0] === "Combate" })
-                let amenaza = distribucion.filter(element => { return element.category[0] === "Amenaza" })
-                let prevencion = distribucion.filter(element => { return element.category[0] === "Prevención" })
-                if (impacto.length > 0) { word.impacto = impacto[0].count } else { word.impacto = 0 }
-                if (riesgo.length > 0) { word.riesgo = riesgo[0].count } else { word.riesgo = 0}
-                if (recuperacion.length > 0) { word.recuperacion = recuperacion[0].count } else { word.recuperacion = 0}
-                if (mitigacion.length > 0) { word.mitigacion = mitigacion[0].count } else { word.mitigacion = 0}
-                if (combate.length > 0) { word.combate = combate[0].count } else { word.combate = 0}
-                if (amenaza.length > 0) { word.amenaza = amenaza[0].count } else { word.amenaza = 0}
-                if (prevencion.length > 0) { word.prevencion = prevencion[0].count } else { word.prevencion = 0}
+                word.categories = []
+                categorias.forEach((category, index) => {
+                    let cat = distribucion.filter(element => { return element.category[0] === category.name })
+                    if (cat.length > 0) {
+                        word.categories.push({ name: category.name, count: cat[0].count}) 
+                    } else {
+                        word.categories.push({ name: category.name, count: 0})
+                    }
+                })
                 await distribucionPorPalabra.push(word)
                 const todas = await Promise.all(distribucionPorPalabra)
                 if (todas.length === palabrasEtiquetadas.length){

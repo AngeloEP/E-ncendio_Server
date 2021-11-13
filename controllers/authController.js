@@ -85,6 +85,7 @@ exports.autenticarUsuario = async (req, res) => {
 
             let recompensaTareas = null
             let nuevaTarea = {}
+            let perfil = await Profile.findOne({user_id: id})
             let tareas = await DailyTask.find({ user_id: id, isActivated: true, isClaimed: false, type: "Login", mode: "logins" })
             if (tareas.length > 0) {
                 tareas.forEach( async (tareita) => {

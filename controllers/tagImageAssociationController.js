@@ -290,7 +290,7 @@ exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
                 },
             },
         ])
-        
+        let categorias = await Category.find({})
        var distribucionPorImagen = []
         imagenesEtiquetadas.forEach( async (imagen, index) => {
             let distribucion = await TagImageAssociation.aggregate([
@@ -347,20 +347,15 @@ exports.imagenesEtiquetadasPorCategoria = async (req, res) => {
                 { $unset: "image_id" },
                 { "$sort": { "count": -1 } },
             ])
-                let impacto = distribucion.filter(element => { return element.category[0] === "Impacto" })
-                let riesgo = distribucion.filter(element => { return element.category[0] === "Riesgo" })
-                let recuperacion = distribucion.filter(element => { return element.category[0] === "Recuperación" })
-                let mitigacion = distribucion.filter(element => { return element.category[0] === "Mitigación" })
-                let combate = distribucion.filter(element => { return element.category[0] === "Combate" })
-                let amenaza = distribucion.filter(element => { return element.category[0] === "Amenaza" })
-                let prevencion = distribucion.filter(element => { return element.category[0] === "Prevención" })
-                if (impacto.length > 0) { imagen.impacto = impacto[0].count } else { imagen.impacto = 0 }
-                if (riesgo.length > 0) { imagen.riesgo = riesgo[0].count } else { imagen.riesgo = 0}
-                if (recuperacion.length > 0) { imagen.recuperacion = recuperacion[0].count } else { imagen.recuperacion = 0}
-                if (mitigacion.length > 0) { imagen.mitigacion = mitigacion[0].count } else { imagen.mitigacion = 0}
-                if (combate.length > 0) { imagen.combate = combate[0].count } else { imagen.combate = 0}
-                if (amenaza.length > 0) { imagen.amenaza = amenaza[0].count } else { imagen.amenaza = 0}
-                if (prevencion.length > 0) { imagen.prevencion = prevencion[0].count } else { imagen.prevencion = 0}
+                imagen.categories = []
+                categorias.forEach((category, index) => {
+                    let cat = distribucion.filter(element => { return element.category[0] === category.name })
+                    if (cat.length > 0) {
+                        imagen.categories.push({ name: category.name, count: cat[0].count}) 
+                    } else {
+                        imagen.categories.push({ name: category.name, count: 0})
+                    }
+                })
                 await distribucionPorImagen.push(imagen)
                 const todas = await Promise.all(distribucionPorImagen)
                 if (todas.length === imagenesEtiquetadas.length){

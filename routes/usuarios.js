@@ -96,4 +96,8 @@ router.get('/:id/tips',
     usuarioController.obtenerTipsSubidosPorUsuario
 )
 
+router.get('/getCSV',
+    usuarioController.obtenerCSV
+)
+
 module.exports = router;

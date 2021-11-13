@@ -39,6 +39,7 @@ exports.crearAsociacionDeSeleccionUnica = async (req, res) => {
 
         let recompensaTareas = null
         let nuevaTarea = {}
+        perfil = await Profile.findOne({user_id: req.usuario.id})
         let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "UniqueSelection", mode: "counts" })
         if (tareas.length > 0) {
             tareas.forEach( async (tareita) => {

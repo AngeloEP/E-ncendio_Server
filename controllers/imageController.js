@@ -16,6 +16,7 @@ const fs = require('fs')
 const path = require('path')
 const AWS = require('aws-sdk');
 const TagImageAssociation = require('../models/TagImageAssociation')
+const TagWordAssociation = require('../models/TagWordAssociation')
 AWS.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
@@ -144,6 +145,7 @@ exports.guardarImagen = async (req, res) => {
 
         let recompensaTareas = null
         let nuevaTarea = {}
+        let perfil = await Profile.findOne({user_id: req.usuario.id})
         let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Image", mode: "uploads" })
         if (tareas.length > 0) {
             tareas.forEach( async (tareita) => {
@@ -482,7 +484,8 @@ exports.cambiarDailyTasks = async (req, res) => {
         //     console.log(err, count)
         //    });
 
-        res.json({response})
+        // console.log(categorias)
+        res.json(response)
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo modificar la colección DailyTasks')

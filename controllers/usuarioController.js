@@ -11,6 +11,7 @@ const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
 const Task = require('../models/Task')
 const Level = require('../models/Level')
+const Category = require('../models/Category')
 const League = require('../models/League')
 const bcryptjs = require('bcryptjs')
 const { validationResult } = require('express-validator')
@@ -27,6 +28,8 @@ AWS.config.update({
 const S3 = new AWS.S3();
 const moment = require('moment-timezone');
 const mongoose = require('mongoose')
+
+const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
 // const storage = multer.diskStorage({
 //     destination: path.join(__dirname, "../storage/profiles_images"),
@@ -383,6 +386,7 @@ exports.modificarUsuario = async (req, res) => {
 
         let recompensaTareas = null
         let nuevaTarea = {}
+        perfil = await Profile.findOne({user_id: req.usuario.id})
         let tareas = await DailyTask.find({ user_id: req.usuario.id, isActivated: true, isClaimed: false, type: "Profile", mode: "counts" })
         if (tareas.length > 0) {
             tareas.forEach( async (tareita) => {
@@ -592,5 +596,15 @@ exports.obtenerTipsSubidosPorUsuario = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo obtener los Tips de este usuario')
+    }
+}
+
+exports.obtenerCSV = async (req, res) => {
+    try {
+        const data = await Category.find({})
+        res.json({ data })
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener el CSV')
     }
 }
