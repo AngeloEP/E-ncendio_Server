@@ -29,7 +29,6 @@ const S3 = new AWS.S3();
 const moment = require('moment-timezone');
 const mongoose = require('mongoose')
 
-const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
 // const storage = multer.diskStorage({
 //     destination: path.join(__dirname, "../storage/profiles_images"),
