@@ -6,6 +6,8 @@ const Image = require('../models/Image')
 const Log = require('../models/Log')
 const Hangman = require('../models/Hangman')
 const UniqueSelection = require('../models/UniqueSelection')
+const TagImageAssociation = require('../models/TagImageAssociation')
+const TagWordAssociation = require('../models/TagWordAssociation')
 const DailyTask = require('../models/DailyTask')
 const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
@@ -598,12 +600,161 @@ exports.obtenerTipsSubidosPorUsuario = async (req, res) => {
     }
 }
 
-exports.obtenerCSV = async (req, res) => {
+exports.obtenerCSVImagenesEtiquetadas = async (req, res) => {
     try {
-        const data = await Category.find({})
-        res.json({ data })
+        let data = [];
+        let usuarios = await Usuario.aggregate([
+            { $unset: "isBlocked" },
+            { $unset: "registerAt" },
+            { $unset: "register" },
+            { $unset: "firstname" },
+            { $unset: "lastname" },
+            { $unset: "gender" },
+            { $unset: "age" },
+            { $unset: "phone" },
+            { $unset: "password" },
+            { $unset: "isAdmin" },
+            { $unset: "urlFile" },
+        ])
+        let largoUsuarios = usuarios.length
+        usuarios.forEach(async (usuario, indexUsuario) => {
+            let tagsImages = await TagImageAssociation.aggregate([
+                { $match: { "user_id": mongoose.Types.ObjectId(usuario._id) } },
+                { $unset: "user_id" },
+                { $unset: "__v" },
+                { $unset: "_id" },
+                {
+                    $lookup: {
+                        from: "images",
+                        localField: "image_id",
+                        foreignField: "_id",
+                        as: "image"
+                    }
+                },
+                {$unwind: "$image"},
+                { $unset: "image._id" },
+                { $unset: "image.difficulty" },
+                { $unset: "image.points" },
+                { $unset: "image.filename" },
+                { $unset: "image.level_id" },
+                { $unset: "image.user_id" },
+                { $unset: "image.createdAt" },
+                { $unset: "image.updatedAt" },
+                { $unset: "image.isEnabled" },
+                { $unset: "image.__v" },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                },
+                {$unwind: "$category"},
+                { $unset: "category._id" },
+                { $unset: "category.__v" },
+                { $unset: "category.isVisible" },
+                { $unset: "category.updatedAt" },
+                { $unset: "image_id" },
+                { $unset: "category_id" },
+            ])
+            tagsImages.forEach( tagImage => {
+                data.push(
+                    {
+                        "Usuario": usuario.email,
+                        "Relacionado a incendios": usuario.isFireRelated ? "Si" : "No",
+                        "Relacion": usuario.fireRelation ? usuario.fireRelation : "No asignada",
+                        "Imagen": tagImage.image.imageUrl,
+                        "Categoría": tagImage.category.name,
+                        "Ubicación": usuario.geometry ? "[".concat(usuario.geometry[0].toString()).concat(",").concat(usuario.geometry[1].toString()).concat("]") : "No registrada",
+                    }
+                )
+            });
+            if (indexUsuario + 1 === largoUsuarios) {
+                res.json({ data })
+            }
+        });
     } catch (error) {
         console.log(error)
-        res.status(400).send('No se pudo obtener el CSV')
+        res.status(400).send('No se pudo obtener el CSV de las imágenes etiquetadas')
+    }
+}
+
+exports.obtenerCSVPalabrasEtiquetadas = async (req, res) => {
+    try {
+        let data = [];
+        let usuarios = await Usuario.aggregate([
+            { $unset: "isBlocked" },
+            { $unset: "registerAt" },
+            { $unset: "register" },
+            { $unset: "firstname" },
+            { $unset: "lastname" },
+            { $unset: "gender" },
+            { $unset: "age" },
+            { $unset: "phone" },
+            { $unset: "password" },
+            { $unset: "isAdmin" },
+            { $unset: "urlFile" },
+        ])
+        let largoUsuarios = usuarios.length
+        usuarios.forEach(async (usuario, indexUsuario) => {
+            let tagsWords = await TagWordAssociation.aggregate([
+                { $match: { "user_id": mongoose.Types.ObjectId(usuario._id) } },
+                { $unset: "user_id" },
+                { $unset: "__v" },
+                { $unset: "_id" },
+                {
+                    $lookup: {
+                        from: "words",
+                        localField: "word_id",
+                        foreignField: "_id",
+                        as: "word"
+                    }
+                },
+                {$unwind: "$word"},
+                { $unset: "word._id" },
+                { $unset: "word.difficulty" },
+                { $unset: "word.points" },
+                { $unset: "word.level_id" },
+                { $unset: "word.user_id" },
+                { $unset: "word.createdAt" },
+                { $unset: "word.updatedAt" },
+                { $unset: "word.isEnabled" },
+                { $unset: "word.__v" },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                },
+                {$unwind: "$category"},
+                { $unset: "category._id" },
+                { $unset: "category.__v" },
+                { $unset: "category.isVisible" },
+                { $unset: "category.updatedAt" },
+                { $unset: "word_id" },
+                { $unset: "category_id" },
+            ])
+            tagsWords.forEach( tagWord => {
+                data.push(
+                    {
+                        "Usuario": usuario.email,
+                        "Relacionado a incendios": usuario.isFireRelated ? "Si" : "No",
+                        "Relacion": usuario.fireRelation ? usuario.fireRelation : "No asignada",
+                        "Palabra": tagWord.word.name,
+                        "Categoría": tagWord.category.name,
+                        "Ubicación": usuario.geometry ? "[".concat(usuario.geometry[0].toString()).concat(",").concat(usuario.geometry[1].toString()).concat("]") : "No registrada",
+                    }
+                )
+            });
+            if (indexUsuario + 1 === largoUsuarios) {
+                res.json({ data })
+            }
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener el CSV de las palabras etiquetadas')
     }
 }
