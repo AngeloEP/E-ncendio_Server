@@ -9,9 +9,8 @@ const TagUniqueSelectionAssociationsSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'UniqueSelection'
     },
-    keyWord: {
+    imageSelected: {
         type: String,
-        required: true,
         trim: true
     }
 })

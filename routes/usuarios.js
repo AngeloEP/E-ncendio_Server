@@ -106,5 +106,8 @@ router.get('/getCSVTagWords',
     usuarioController.obtenerCSVPalabrasEtiquetadas
 )
 
+router.get('/getCSVTagUniqueSelections',
+    usuarioController.obtenerCSVSeleccionesUnicasEtiquetadas
+)
 
 module.exports = router;

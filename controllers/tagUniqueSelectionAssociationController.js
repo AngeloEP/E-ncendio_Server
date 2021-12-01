@@ -1,4 +1,5 @@
 const TagUniqueSelectionAssociation = require('../models/TagUniqueSelectionAssociation')
+const UniqueSelection = require('../models/UniqueSelection')
 const Profile = require('../models/Profile')
 const DailyTask = require('../models/DailyTask')
 const { validationResult } = require('express-validator')
@@ -11,11 +12,23 @@ exports.crearAsociacionDeSeleccionUnica = async (req, res) => {
     try {
         seleccionUnicaAsociada = new TagUniqueSelectionAssociation()
         seleccionUnicaAsociada.user_id = req.usuario.id
+        let SU = await UniqueSelection.findOne({ _id: req.params.uniqueSelection })
         seleccionUnicaAsociada.uniqueSelection_id = req.params.uniqueSelection
-        seleccionUnicaAsociada.keyWord = req.params.keyWord
 
         let seleccionUnicaRepetida = {}
-        seleccionUnicaRepetida.keyWord = req.params.keyWord
+        if (req.params.imageSelected === 1) {
+            seleccionUnicaAsociada.imageSelected = SU.imageUrl_1
+            
+        } else {
+            if (req.params.imageSelected === 2) {
+                seleccionUnicaAsociada.imageSelected = SU.imageUrl_2
+                
+            } else {
+                seleccionUnicaAsociada.imageSelected = SU.imageUrl_3
+
+            }
+        }
+        seleccionUnicaRepetida.imageSelected = seleccionUnicaAsociada.imageSelected
 
         let perfil = await Profile.findOne({user_id: req.usuario.id})
         let nuevoPerfil = {};

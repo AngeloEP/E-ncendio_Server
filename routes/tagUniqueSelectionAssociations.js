@@ -7,7 +7,7 @@ const auth = require('../middleware/auth')
 
 // Guardar asociación
 // api/tag-uniqueSelections
-router.post('/:uniqueSelection/word/:keyWord',
+router.post('/:uniqueSelection/image/:imageSelected',
     auth,
     tagUniqueSelectionAssociationController.crearAsociacionDeSeleccionUnica
 )

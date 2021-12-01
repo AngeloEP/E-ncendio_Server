@@ -8,6 +8,7 @@ const Hangman = require('../models/Hangman')
 const UniqueSelection = require('../models/UniqueSelection')
 const TagImageAssociation = require('../models/TagImageAssociation')
 const TagWordAssociation = require('../models/TagWordAssociation')
+const TagUniqueSelectionAssociation = require('../models/TagUniqueSelectionAssociation')
 const DailyTask = require('../models/DailyTask')
 const Tip = require('../models/Tip')
 const Profile = require('../models/Profile')
@@ -756,5 +757,73 @@ exports.obtenerCSVPalabrasEtiquetadas = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(400).send('No se pudo obtener el CSV de las palabras etiquetadas')
+    }
+}
+
+exports.obtenerCSVSeleccionesUnicasEtiquetadas = async (req, res) => {
+    try {
+        let data = [];
+        let usuarios = await Usuario.aggregate([
+            { $unset: "isBlocked" },
+            { $unset: "registerAt" },
+            { $unset: "register" },
+            { $unset: "firstname" },
+            { $unset: "lastname" },
+            { $unset: "gender" },
+            { $unset: "age" },
+            { $unset: "phone" },
+            { $unset: "password" },
+            { $unset: "isAdmin" },
+            { $unset: "urlFile" },
+        ])
+        let largoUsuarios = usuarios.length
+        usuarios.forEach(async (usuario, indexUsuario) => {
+            let tagsUniqueSelections = await TagUniqueSelectionAssociation.aggregate([
+                { $match: { "user_id": mongoose.Types.ObjectId(usuario._id) } },
+                { $unset: "user_id" },
+                { $unset: "__v" },
+                { $unset: "_id" },
+                {
+                    $lookup: {
+                        from: "uniqueselections",
+                        localField: "uniqueSelection_id",
+                        foreignField: "_id",
+                        as: "uniqueSelection"
+                    }
+                },
+                {$unwind: "$uniqueSelection"},
+                { $unset: "uniqueSelection._id" },
+                { $unset: "uniqueSelection.difficulty" },
+                { $unset: "uniqueSelection.points" },
+                { $unset: "uniqueSelection.level_id" },
+                { $unset: "uniqueSelection.user_id" },
+                { $unset: "uniqueSelection.createdAt" },
+                { $unset: "uniqueSelection.updatedAt" },
+                { $unset: "uniqueSelection.isEnabled" },
+                { $unset: "uniqueSelection.__v" },
+                { $unset: "uniqueSelection_id" },
+            ])
+            tagsUniqueSelections.forEach( tagUniqueSelection => {
+                data.push(
+                    {
+                        "Usuario": usuario.email,
+                        "Relacionado a incendios": usuario.isFireRelated ? "Si" : "No",
+                        "Relacion": usuario.fireRelation ? usuario.fireRelation : "No asignada",
+                        "Imagen 1": tagUniqueSelection.uniqueSelection.imageUrl_1,
+                        "Imagen 2": tagUniqueSelection.uniqueSelection.imageUrl_2,
+                        "Imagen 3": tagUniqueSelection.uniqueSelection.imageUrl_3,
+                        "Palabra Clave": tagUniqueSelection.uniqueSelection.keyWord,
+                        "Imagen Escogida": tagUniqueSelection.imageSelected,
+                        "Ubicación": usuario.geometry ? "[".concat(usuario.geometry[0].toString()).concat(",").concat(usuario.geometry[1].toString()).concat("]") : "No registrada",
+                    }
+                )
+            });
+            if (indexUsuario + 1 === largoUsuarios) {
+                res.json({ data })
+            }
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(400).send('No se pudo obtener el CSV de las S. Únicas etiquetadas')
     }
 }
