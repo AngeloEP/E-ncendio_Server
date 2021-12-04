@@ -284,7 +284,7 @@ exports.eliminarImagenesPalabraPorUsuario = async (req, res) => {
         
         // Eliminar ahorcado de la BD
         await Hangman.findOneAndRemove({ _id: req.params.id })
-
+        await TagHangmanAssociation.deleteMany({ hangman_id: req.params.id })
 
         res.json({ msg: "Ahorcado eliminada correctamente" })
 
@@ -368,6 +368,7 @@ exports.modificarAhorcadoPorUsuario = async (req, res) => {
         }
 
         // Guardar ahorcado modificado
+        ahorcadoNuevo.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         ahorcadoAntiguo = await Hangman.findOneAndUpdate(
                                 { _id : req.params.id },
                                 ahorcadoNuevo,
@@ -521,6 +522,7 @@ exports.modificarAhorcadoDesdeAdmin = async (req, res) => {
         ahorcadoNuevo.points = points
 
         // Guardar Ahorcado modificada
+        ahorcadoNuevo.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         ahorcadoAntiguo = await Hangman.findOneAndUpdate(
                         { _id : req.params.id },
                         ahorcadoNuevo,

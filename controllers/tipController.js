@@ -254,6 +254,7 @@ exports.eliminarTipPorUsuario = async (req, res) => {
 
         // Eliminar tip
         await Tip.findOneAndRemove({ _id: req.params.id })
+        await ViewedTipAssociation.deleteMany({ tip_id: req.params.id })
 
         res.json({ msg: "Tip eliminado correctamente" })
 
@@ -319,6 +320,7 @@ exports.modificarTipPorUsuario = async (req, res) => {
         }
 
         // Guardar Tip modificada
+        tipNuevo.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         tipAntiguo = await Tip.findOneAndUpdate(
                         { _id : req.params.id },
                         tipNuevo,
@@ -446,6 +448,7 @@ exports.modificarTipDesdeAdmin = async (req, res) => {
         tipNuevo.points = points
 
         // Guardar tip modificado
+        tipNuevo.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         tipAntiguo = await Tip.findOneAndUpdate(
                         { _id : req.params.id },
                         tipNuevo,

@@ -90,6 +90,7 @@ exports.modificarCategoría = async (req, res) => {
         let categoríaNueva = {}
         categoríaNueva.name = name
         categoríaNueva.isVisible = isVisible
+        categoríaNueva.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
 
         // Guardar Categoría modificada
         categoríaAntigua = await Category.findOneAndUpdate(

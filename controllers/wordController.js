@@ -171,7 +171,7 @@ exports.eliminarPalabraPorUsuario = async (req, res) => {
 
         // Eliminar palabra
         await Word.findOneAndRemove({ _id: req.params.id })
-
+        await TagWordAssociation.deleteMany({ word_id: req.params.id })
 
         res.json({ msg: "Palabra eliminada correctamente" })
 
@@ -213,6 +213,7 @@ exports.modificarPalabraPorUsuario = async (req, res) => {
         }
 
         // Guardar Palabra modificada
+        palabraNueva.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         palabraAntigua = await Word.findOneAndUpdate(
                         { _id : req.params.id },
                         palabraNueva,
@@ -328,6 +329,7 @@ exports.modificarPalabraDesdeAdmin = async (req, res) => {
         palabraNueva.points = points
 
         // Guardar palabra modificada
+        palabraNueva.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         palabraAntigua = await Word.findOneAndUpdate(
                         { _id : req.params.id },
                         palabraNueva,

@@ -276,7 +276,7 @@ exports.eliminarSeleccionUnicaPorUsuario = async (req, res) => {
         
         // Eliminar selección única de la BD
         await UniqueSelection.findOneAndRemove({ _id: req.params.id })
-
+        await TagUniqueSelectionAssociation.deleteMany({ uniqueSelection_id: req.params.id })
 
         res.json({ msg: "Selección única eliminada correctamente" })
 
@@ -354,6 +354,7 @@ exports.modificarSeleccionUnicaPorUsuario = async (req, res) => {
         }
 
         // Guardar selección única modificada
+        seleccionUnicaNueva.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         seleccionUnicaAntigua = await UniqueSelection.findOneAndUpdate(
                                 { _id : req.params.id },
                                 seleccionUnicaNueva,
@@ -502,6 +503,7 @@ exports.modificarSeleccionUnicaDesdeAdmin = async (req, res) => {
         seleccionUnicaNueva.points = points
 
         // Guardar selección única modificada
+        seleccionUnicaNueva.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         seleccionUnicaAntigua = await UniqueSelection.findOneAndUpdate(
                         { _id : req.params.id },
                         seleccionUnicaNueva,

@@ -242,6 +242,7 @@ exports.eliminarImagenPorUsuario = async (req, res) => {
 
         // Eliminar imagen
         await Image.findOneAndRemove({ _id: req.params.id })
+        await TagImageAssociation.deleteMany({ image_id: req.params.id })
 
 
         res.json({ msg: "Imagen eliminada correctamente" })
@@ -299,6 +300,7 @@ exports.modificarImagenPorUsuario = async (req, res) => {
         }
 
         // Guardar Imagen modificada
+        imagenNueva.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         imagenAntigua = await Image.findOneAndUpdate(
                         { _id : req.params.id },
                         imagenNueva,
@@ -430,6 +432,7 @@ exports.modificarImagenDesdeAdmin = async (req, res) => {
         imagenNueva.points = points
 
         // Guardar Imagen modificada
+        imagenNueva.updatedAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss");
         imagenAntigua = await Image.findOneAndUpdate(
                         { _id : req.params.id },
                         imagenNueva,
