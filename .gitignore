@@ -6,3 +6,6 @@ storage/
 
 # Environment variables
 variables.env
+
+# .vscode file
+.vscode

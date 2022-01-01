@@ -107,6 +107,7 @@ router.get('/getCSVTagWords',
 )
 
 router.get('/getCSVTagUniqueSelections',
+    auth,
     usuarioController.obtenerCSVSeleccionesUnicasEtiquetadas
 )
 
