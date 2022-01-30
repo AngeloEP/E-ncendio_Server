@@ -138,11 +138,6 @@ exports.crearUsuario = async (req, res, next) => {
         const salt = await bcryptjs.genSalt(10)
         usuario.password = await bcryptjs.hash(password, salt)
         usuario.registerAt = moment().tz("America/Santiago").format("DD-MM-YYYY HH:mm:ss")
-        // if (usuario.isExpert) {
-        //     usuario.isAdmin = true
-        // } else {
-        //     usuario.isAdmin = false
-        // }
         usuario.isAdmin = false
 
         // Guardar el nuevo usuario
