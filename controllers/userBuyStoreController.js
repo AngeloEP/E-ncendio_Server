@@ -13,7 +13,7 @@ exports.comprarMarcoATienda = async (req, res) => {
             // return res.status(400).json({ msg: 'El usuario no existe' })
             return res.status(400).json({ msg: 'Fire Points insuficientes para comprar' })
         } else {
-            let marcoComprado = new UserBuyStore;
+            let marcoComprado = await new UserBuyStore;
             marcoComprado.user_id = req.usuario.id;
             marcoComprado.name = producto.name;
             marcoComprado.nameCss = producto.nameCss;
